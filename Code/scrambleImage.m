@@ -9,6 +9,8 @@ A = im2double(imread('mandrill.tif'));
 % Number of rows and columns of puzzle
 rows    = 3;
 cols    = 3;
+pattern = round(rand(m,n));
+pattern = [2*ones(1,n+2); 2*ones(m,1) pattern 2*ones(m,1); 2*ones(1,n+2)];
 
 % Parameters of the circular shape
 r = 20;
