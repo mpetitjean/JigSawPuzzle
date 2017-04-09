@@ -18,7 +18,7 @@ r = 15;
 shift = 15;
 offset = 2*r-shift;
 
-for jj = 1:rows
+for jj = 1:rows+1
 for ii = 1:cols+1
     
     % Cover zell with zeros
@@ -28,7 +28,7 @@ for ii = 1:cols+1
     
     % Copy initial square of subimage
     alpha(1+offset:m/(2*(rows-1))+offset,1+offset:(n)/(2*(cols-1))+offset) = ones(m/(2*(rows-1)),(n)/(2*(cols-1)));
-    cell(1+offset:m/(2*(rows-1))+offset,1+offset:(n)/(2*(cols-1))+offset) = A(1:m/(2*(rows-1)),1+(n*(ii-1))/(2*(cols-1)):(n*(ii))/(2*(cols-1)));
+    cell(1+offset:m/(2*(rows-1))+offset,1+offset:(n)/(2*(cols-1))+offset) = A(1+(m*(jj-1))/(2*(rows-1)):(m*jj)/(2*(rows-1)),1+(n*(ii-1))/(2*(cols-1)):(n*(ii))/(2*(cols-1)));
     
     %---------------------------
     % Check pattern on the right
@@ -37,17 +37,17 @@ for ii = 1:cols+1
         % Equal to 1 => convex shape
         
         % Center of circular shape
-        y_center = m/(4*(rows-1)); % Half of subsquare
+        y_center = (m*jj)/(4*(rows-1)); % Half of subsquare
         x_center = (n*ii)/(2*(cols-1))-shift+r;    % Side of subsquare
 
         % See if coordinates fits in a circle, copy if true        
-        for y = m/(4*(rows-1))-r:m/(4*(rows-1))+r
+        for y = m*jj/(4*(rows-1))-r:m*jj/(4*(rows-1))+r
             min = x_center - sqrt(r^2 - (y-y_center)^2);
             max = x_center + sqrt(r^2 - (y-y_center)^2);
             for x = (n*ii)/(2*(cols-1)):(n*ii)/(2*(cols-1))+offset
                 if (x > min && x < max)
-                    cell(y+offset,x-(n*(ii-1))/(2*(cols-1))+offset) = A(y,x);
-                    alpha(y+offset,x-(n*(ii-1))/(2*(cols-1))+offset) = 1;
+                    cell(y-m*(jj-1)/(4*(rows-1))+r,x-(n*(ii-1))/(2*(cols-1))+offset) = A(y,x);
+                    alpha(y-m*(jj-1)/(4*(rows-1))+r,x-(n*(ii-1))/(2*(cols-1))+offset) = 1;
                 end
             end
         end
@@ -56,17 +56,17 @@ for ii = 1:cols+1
         % Equal to 0 => concave shape
  
         % Center of circular shape
-        y_center = m/(4*(rows-1));                  % Half of subsquare
+        y_center = m*jj/(4*(rows-1));                  % Half of subsquare
         x_center = (n*ii)/(2*(cols-1))+shift-r;     % Side of subsquare
 
         % See if coordinates fits in a circle, copy if true        
-        for y = m/(4*(rows-1))-r:m/(4*(rows-1))+r
+        for y = m*jj/(4*(rows-1))-r:m*jj/(4*(rows-1))+r
             min = x_center - sqrt(r^2 - (y-y_center)^2);
             max = x_center + sqrt(r^2 - (y-y_center)^2);
             for x = (n*ii)/(2*(cols-1))-2*r+shift:(n*ii)/(2*(cols-1))
                 if (x > min && x < max)
-                    cell(y+offset,x-(n*(ii-1))/(2*(cols-1))+offset) = 0;
-                    alpha(y+offset,x-(n*(ii-1))/(2*(cols-1))+offset) = 0;
+                    cell(y-m*(jj-1)/(4*(rows-1))+r,x-(n*(ii-1))/(2*(cols-1))+offset) = 0;
+                    alpha(y-m*(jj-1)/(4*(rows-1))+r,x-(n*(ii-1))/(2*(cols-1))+offset) = 0;
                 end
             end
         end
@@ -81,17 +81,17 @@ for ii = 1:cols+1
         % Equal to 1 => concave shape
         
          % Center of circular shape
-        y_center = m/(4*(rows-1));                  % Half of subsquare
+        y_center = m*jj/(4*(rows-1));                  % Half of subsquare
         x_center = (n*(ii-1))/(2*(cols-1))+shift-r;     % Side of subsquare
 
         % See if coordinates fits in a circle, copy if true        
-        for y = m/(4*(rows-1))-r:m/(4*(rows-1))+r
+        for y = m*jj/(4*(rows-1))-r:m*jj/(4*(rows-1))+r
             min = x_center - sqrt(r^2 - (y-y_center)^2);
             max = x_center + sqrt(r^2 - (y-y_center)^2);
             for x = (n*(ii-1))/(2*(cols-1)):(n*(ii-1))/(2*(cols-1))+offset
                 if (x > min && x < max)
-                    cell(y+offset,x+1-(n*(ii-1))/(2*(cols-1))+offset) = 0;
-                    alpha(y+offset,x+1-(n*(ii-1))/(2*(cols-1))+offset) = 0;
+                    cell(y-m*(jj-1)/(4*(rows-1))+r,x+1-(n*(ii-1))/(2*(cols-1))+offset) = 0;
+                    alpha(y-m*(jj-1)/(4*(rows-1))+r,x+1-(n*(ii-1))/(2*(cols-1))+offset) = 0;
                 end
             end
         end
@@ -100,17 +100,17 @@ for ii = 1:cols+1
         % Equal to 0 => convex shape
         
         % Center of circular shape
-        y_center = m/(4*(rows-1)); % Half of subsquare
+        y_center = m*jj/(4*(rows-1)); % Half of subsquare
         x_center = (n*(ii-1))/(2*(cols-1))-shift+r;    % Side of subsquare
 
         % See if coordinates fits in a circle, copy if true        
-        for y = m/(4*(rows-1))-r:m/(4*(rows-1))+r
+        for y = m*jj/(4*(rows-1))-r:m*jj/(4*(rows-1))+r
             min = x_center - sqrt(r^2 - (y-y_center)^2);
             max = x_center + sqrt(r^2 - (y-y_center)^2);
             for x = (n*(ii-1))/(2*(cols-1))-2*r+shift:(n*(ii-1))/(2*(cols-1))
                 if (x > min && x < max)
-                    cell(y+offset,x-(n*(ii-1))/(2*(cols-1))+offset) = A(y,x);
-                    alpha(y+offset,x-(n*(ii-1))/(2*(cols-1))+offset) = 1;
+                    cell(y-m*(jj-1)/(4*(rows-1))+r,x-(n*(ii-1))/(2*(cols-1))+offset) = A(y,x);
+                    alpha(y-m*(jj-1)/(4*(rows-1))+r,x-(n*(ii-1))/(2*(cols-1))+offset) = 1;
                 end
             end
         end
@@ -121,7 +121,7 @@ for ii = 1:cols+1
     eval(sprintf('puzzle.alpha_%d=alpha;', ii));
     subplot(rows+1,cols+1,ii+(jj-1)*rows+jj-1)
     h = imshow(cell);
-    set(h, 'AlphaData', alpha)
+    %set(h, 'AlphaData', alpha)
 end
 end
 
