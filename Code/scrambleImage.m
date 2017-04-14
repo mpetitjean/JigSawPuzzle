@@ -3,21 +3,22 @@
 clear;
 close all;
 
-A = im2double(imread('mandrill.tif'));
+A = im2double(imread('lenagray.tif'));
 [m, n] = size(A);
 
 % Number of rows and columns of puzzle
-rows    = 3;
-cols    = 3;
+rows    = 5;
+cols    = 5;
 % Determine randomly if the shape is going to be convex or concave
-pattern = round(rand(rows,cols));
-pattern = [2*ones(1,cols+2); 2*ones(rows,1) pattern 2*ones(rows,1); 2*ones(1,cols+2)];
+pattern = round(rand(rows+1,cols));
+pattern = [2*ones(1,cols+2); 2*ones(rows+1,1) pattern 2*ones(rows+1,1); 2*ones(1,cols+2)];
 
 % Parameters of the circular shape
-r = 15;
-shift = 15;
+r = round((m+1)/(4*(rows+1)));
+shift = r;
 offset = 2*r-shift;
 
+count = 0;
 for jj = 1:rows+1
 for ii = 1:cols+1
     
@@ -37,17 +38,17 @@ for ii = 1:cols+1
         % Equal to 1 => convex shape
         
         % Center of circular shape
-        y_center = (m*jj)/(4*(rows-1)); % Half of subsquare
+        y_center = (m)/(4*(rows-1))+(m*(jj-1))/(2*(rows-1)); % Half of subsquare
         x_center = (n*ii)/(2*(cols-1))-shift+r;    % Side of subsquare
 
         % See if coordinates fits in a circle, copy if true        
-        for y = m*jj/(4*(rows-1))-r:m*jj/(4*(rows-1))+r
+        for y = y_center-r:y_center+r
             min = x_center - sqrt(r^2 - (y-y_center)^2);
             max = x_center + sqrt(r^2 - (y-y_center)^2);
             for x = (n*ii)/(2*(cols-1)):(n*ii)/(2*(cols-1))+offset
                 if (x > min && x < max)
-                    cell(y-m*(jj-1)/(4*(rows-1))+r,x-(n*(ii-1))/(2*(cols-1))+offset) = A(y,x);
-                    alpha(y-m*(jj-1)/(4*(rows-1))+r,x-(n*(ii-1))/(2*(cols-1))+offset) = 1;
+                    cell(y-m*(jj-1)/(2*(rows-1))+r,x-(n*(ii-1))/(2*(cols-1))+offset) = A(y,x);
+                    alpha(y-m*(jj-1)/(2*(rows-1))+r,x-(n*(ii-1))/(2*(cols-1))+offset) = 1;
                 end
             end
         end
@@ -81,17 +82,17 @@ for ii = 1:cols+1
         % Equal to 1 => concave shape
         
          % Center of circular shape
-        y_center = m*jj/(4*(rows-1));                  % Half of subsquare
+        y_center = (m)/(4*(rows-1))+(m*(jj-1))/(2*(rows-1));                 % Half of subsquare
         x_center = (n*(ii-1))/(2*(cols-1))+shift-r;     % Side of subsquare
 
         % See if coordinates fits in a circle, copy if true        
-        for y = m*jj/(4*(rows-1))-r:m*jj/(4*(rows-1))+r
+        for y = y_center-r:y_center+r
             min = x_center - sqrt(r^2 - (y-y_center)^2);
             max = x_center + sqrt(r^2 - (y-y_center)^2);
             for x = (n*(ii-1))/(2*(cols-1)):(n*(ii-1))/(2*(cols-1))+offset
                 if (x > min && x < max)
-                    cell(y-m*(jj-1)/(4*(rows-1))+r,x+1-(n*(ii-1))/(2*(cols-1))+offset) = 0;
-                    alpha(y-m*(jj-1)/(4*(rows-1))+r,x+1-(n*(ii-1))/(2*(cols-1))+offset) = 0;
+                    cell(y-m*(jj-1)/(2*(rows-1))+r,x+1-(n*(ii-1))/(2*(cols-1))+offset) = 0;
+                    alpha(y-m*(jj-1)/(2*(rows-1))+r,x+1-(n*(ii-1))/(2*(cols-1))+offset) = 0;
                 end
             end
         end
@@ -100,17 +101,17 @@ for ii = 1:cols+1
         % Equal to 0 => convex shape
         
         % Center of circular shape
-        y_center = m*jj/(4*(rows-1)); % Half of subsquare
+        y_center = (m)/(4*(rows-1))+(m*(jj-1))/(2*(rows-1)); % Half of subsquare
         x_center = (n*(ii-1))/(2*(cols-1))-shift+r;    % Side of subsquare
 
         % See if coordinates fits in a circle, copy if true        
-        for y = m*jj/(4*(rows-1))-r:m*jj/(4*(rows-1))+r
+        for y = y_center-r:y_center+r
             min = x_center - sqrt(r^2 - (y-y_center)^2);
             max = x_center + sqrt(r^2 - (y-y_center)^2);
             for x = (n*(ii-1))/(2*(cols-1))-2*r+shift:(n*(ii-1))/(2*(cols-1))
                 if (x > min && x < max)
-                    cell(y-m*(jj-1)/(4*(rows-1))+r,x-(n*(ii-1))/(2*(cols-1))+offset) = A(y,x);
-                    alpha(y-m*(jj-1)/(4*(rows-1))+r,x-(n*(ii-1))/(2*(cols-1))+offset) = 1;
+                    cell(y-m*(jj-1)/(2*(rows-1))+r,x-(n*(ii-1))/(2*(cols-1))+offset) = A(y,x);
+                    alpha(y-m*(jj-1)/(2*(rows-1))+r,x-(n*(ii-1))/(2*(cols-1))+offset) = 1;
                 end
             end
         end
@@ -122,6 +123,7 @@ for ii = 1:cols+1
     subplot(rows+1,cols+1,ii+(jj-1)*rows+jj-1)
     h = imshow(cell);
     %set(h, 'AlphaData', alpha)
+    count = count + 1
 end
 end
 
