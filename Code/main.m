@@ -5,10 +5,10 @@ clear, close all;
 % Parameters
 image = 'lenagray.tif';
 q = 5;
-blk_size = 128/2;
+blk_size = 128;
 % Cut in subimages and scramble
 [m, n, puzzle] = scrambleImageSquare(image, blk_size,1);
-
+pause(1)
 % Compute Sum of Squared Distance
 ssd = computeSSD(puzzle);
 
@@ -26,39 +26,70 @@ endimage = zeros(m,n);
 midposrow = round(m/blk_size/2-1)*blk_size;
 midposcol = round(n/blk_size/2-1)*blk_size;
 endimage(midposrow+1:midposrow+blk_size, midposcol+1:midposcol+blk_size) = puzzle(:,:,startpiece);
-figure;
-imshow(endimage);
 
+figure;
+imshow(endimage)
+pause(0.5)
 startposrow = midposrow+1;
 startposcol = midposcol+1;
 
 for ii=1:size(puzzle,3)-1
-   [mpiece, loc] = findbestmatch(startimage,ssd);
-   % DO NOT FORGET TO INF SSD
-
+   [mpiece, loc] = findbestmatch(startpiece,ssd);
+   disp(loc)
+   pause;
    switch loc
-       case 1
+       case 2
+           % Piece should be placed on the left
            if startposcol == 1
+               % Shift puzzle to the right if needed
                endimage = circshift(endimage,blk_size,2);
                startposcol = startposcol + blk_size;
            end
            endimage(startposrow:startposrow+blk_size-1,startposcol-blk_size:startposcol-1)...
                = puzzle(:,:,mpiece);
            startposcol = startposcol-blk_size;
-       case 2
+       case 1
+           % Piece should be placed on the right
            if startposcol == n-blk_size+1
+               % Shift puzzle to the left if needed
                endimage = circshift(endimage,-blk_size,2);
-               startposcol = startposcol - blk_size+1;
+               startposcol = startposcol - blk_size;
            end
            endimage(startposrow:startposrow+blk_size-1,startposcol+blk_size:startposcol+2*blk_size-1)...
                = puzzle(:,:,mpiece);
-           startposcol = startposcol+2*blk_size;
-       case 3
-
+           startposcol = startposcol+blk_size;
        case 4
+            % Piece should be placed on the top
+            if startposrow == 1
+               % Shift puzzle to the bottom if needed
+               endimage = circshift(endimage,blk_size,1);
+               startposrow = startposrow + blk_size;
+           end
+           endimage(startposrow-blk_size:startposrow-1,startposcol:startposcol+blk_size-1)...
+               = puzzle(:,:,mpiece);
+           startposrow = startposrow-blk_size;
+       case 3
+           % Piece should be placed on the bottom
+            if startposrow == m-blk_size+1
+               % Shift puzzle to the top if needed
+               endimage = circshift(endimage,-blk_size,1);
+               startposrow = startposrow - blk_size;
+           end
+           endimage(startposrow+blk_size:startposrow+2*blk_size-1,startposcol:startposcol+blk_size-1)...
+               = puzzle(:,:,mpiece);
+           startposrow = startposrow + blk_size;
 
    end
-   startimage = mpiece;
+   
+   % Put processed image SSD value to Inf
+   ssd(startpiece,mpiece,:) = Inf;
+   ssd(mpiece,startpiece,:) = Inf;
+   
+   % Should systematically put to Inf blocs next to each other
+   
+   
+   imshow(endimage)
+   startpiece = mpiece;
 end
 
 
