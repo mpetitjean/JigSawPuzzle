@@ -7,12 +7,13 @@ function ssd = computeSSD(puzzle)
 
 Npc = size(puzzle,3);
 ssd = zeros(Npc,Npc,4);
-
+p = 0.3;
+q = 1/32;
 for ii = 1:Npc
-    for jj = ii:Npc
-        ssd(ii,jj,1) = sum((puzzle(:,end,ii) - puzzle(:,1,jj)).^2);
-        ssd(ii,jj,2) = sum((puzzle(:,1,ii) - puzzle(:,end,jj)).^2);
-        ssd(ii,jj,3) = sum((puzzle(end,:,ii) - puzzle(1,:,jj)).^2);
-        ssd(ii,jj,4) = sum((puzzle(1,:,ii) - puzzle(end,:,jj)).^2);
+    for jj = 1:Npc
+        ssd(ii,jj,1) = sum(abs((puzzle(:,end,ii) - puzzle(:,1,jj))).^p);
+        ssd(ii,jj,2) = sum(abs((puzzle(:,1,ii) - puzzle(:,end,jj))).^p);
+        ssd(ii,jj,3) = sum(abs((puzzle(end,:,ii) - puzzle(1,:,jj))).^p);
+        ssd(ii,jj,4) = sum(abs((puzzle(1,:,ii) - puzzle(end,:,jj))).^p);
     end
 end

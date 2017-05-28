@@ -14,8 +14,7 @@ for ii = 1:Npc
     mu(2) = sum(puzzle(:,2,ii) - puzzle(:,1,ii));
     mu(3) = sum(puzzle(end,:,ii) - puzzle(end-1,:,ii));
     mu(4) = sum(puzzle(2,:,ii) - puzzle(1,:,ii));
-    
-    for jj = ii:Npc
+    for jj = 1:Npc
         mgc(ii,jj,1) = sum((puzzle(:,1,jj) - puzzle(:,end,ii) - mu(1)).^2);
         mgc(ii,jj,2) = sum((puzzle(:,end,jj) - puzzle(:,1,ii) - mu(2)).^2);
         mgc(ii,jj,3) = sum((puzzle(1,:,jj) - puzzle(end,:,ii) - mu(3)).^2);
@@ -23,7 +22,7 @@ for ii = 1:Npc
     end
 end
 
-mgc(:,:,1) = mgc(:,:,1) + mgc(:,:,2).'; 
-mgc(:,:,2) = mgc(:,:,2) + mgc(:,:,1).'; 
-mgc(:,:,3) = mgc(:,:,3) + mgc(:,:,4).'; 
-mgc(:,:,4) = mgc(:,:,4) + mgc(:,:,3).'; 
+mgc(:,:,1) = mgc(:,:,1) + mgc(:,:,2);
+mgc(:,:,2) = mgc(:,:,2) + mgc(:,:,1);
+mgc(:,:,3) = mgc(:,:,3) + mgc(:,:,4);
+mgc(:,:,4) = mgc(:,:,4) + mgc(:,:,3);
