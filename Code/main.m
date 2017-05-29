@@ -8,7 +8,7 @@ q = 5;
 blk_size = 128;
 % Cut in subimages and scramble
 [m, n, puzzle] = scrambleImageSquare(image, blk_size,1);
-pause(1)
+
 % Compute Sum of Squared Distance
 ssd = computeSSD(puzzle);
 
@@ -23,6 +23,7 @@ for ii = 1:4
     ssd(ii,ii,:) = Inf;
 end
 startpiece = randi([1 size(puzzle,3)]);
+startpiece0 = startpiece;
 endimage = zeros(m,n);
 midposrow = round(m/blk_size/2-1)*blk_size;
 midposcol = round(n/blk_size/2-1)*blk_size;
@@ -32,13 +33,24 @@ pattern(round(m/blk_size/2),round(n/blk_size/2)) = 1;
 
 figure;
 imshow(endimage)
-pause(0.5)
+pause;
 startposrow = midposrow+1;
 startposcol = midposcol+1;
 
 for ii=1:size(puzzle,3)-1
-   [mpiece, loc] = findbestmatch(startpiece,ssd);
+   % Check if the snake is biting its tail
+   [startposrow, startposcol, ssd, startpiece, patternCheck] = ...
+   checkPattern(pattern, startposrow, startposcol, blk_size, ssd); 
+   if ii == 1
+       startpiece = startpiece0;
+   end
    pause;
+   
+   i= round((startposrow-1)/blk_size)+1;
+   j = round((startposcol-1)/blk_size)+1;
+   % Find best match for current piece
+   [mpiece, loc, ssd] = findbestmatch(startpiece,ssd,pattern, i, j, patternCheck);
+   disp(mpiece)
    
    % TODO
    % Check pattern, redéfinir un point de départ si entouré de 1   
@@ -98,15 +110,14 @@ for ii=1:size(puzzle,3)-1
    end
    % Update pattern
    
-   pattern(round((startposrow-1)/blk_size)+1,round((startposcol-1)/blk_size+1)) = 1;
-   caca = 1;
+   pattern(round((startposrow-1)/blk_size)+1,round((startposcol-1)/blk_size+1)) = mpiece;
+ 
    % Put processed image SSD value to Inf
    ssd(startpiece,:,:) = Inf;
    ssd(:,startpiece,:) = Inf;
    
    % Should systematically put to Inf blocs next to each other
    
-   disp(pattern)
    imshow(endimage)
    startpiece = mpiece;
 end
