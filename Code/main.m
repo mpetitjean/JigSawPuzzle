@@ -5,7 +5,7 @@ clear, close all;
 % Parameters
 image = 'lenagray.tif';
 q = 5;
-blk_size = 128;
+blk_size = 64;
 % Cut in subimages and scramble
 [m, n, puzzle] = scrambleImageSquare(image, blk_size,1);
 
@@ -35,13 +35,15 @@ pattern(round(m/blk_size/2),round(n/blk_size/2)) = startpiece;
 
 figure;
 imshow(endimage)
+alreadyfullrow = 0;
+alreadyfullcol = 0;
 %pause;
 startposrow = midposrow+1;
 startposcol = midposcol+1;
 startpiecelist = startpiece;
 for ii=1:size(puzzle,3)-1
    % Check if the snake is biting its tail
-   pause(0.2);
+   pause(0.1);
    
    % Find best match for current piece
    [mpiece, loc, startposrow, startposcol] = findbestmatch(startpiecelist, ssd, pattern, blk_size);
@@ -63,7 +65,6 @@ for ii=1:size(puzzle,3)-1
                = puzzle(:,:,mpiece);
            
            startposcol = startposcol-blk_size;
-           
        case 1
            % Piece should be placed on the right
            if startposcol == n-blk_size+1
@@ -102,21 +103,33 @@ for ii=1:size(puzzle,3)-1
            endimage(startposrow+blk_size:startposrow+2*blk_size-1,startposcol:startposcol+blk_size-1)...
                = puzzle(:,:,mpiece);
            startposrow = startposrow + blk_size;
+
    end
    
-   ssd(
    % Update pattern
    
    patternrow = round((startposrow-1)/blk_size)+1;
    patterncol = round((startposcol-1)/blk_size+1);
    pattern(patternrow,patterncol) = mpiece;
-   ssd(mpiece,:,)
    
    if patternrow -1 > 0
        piece = pattern(patternrow-1, patterncol);
        if piece ~= 0
            ssd(piece, :,3) = Inf;
            ssd(:,piece,4) = Inf;
+           ssd(mpiece, :, 4) = Inf;
+           ssd(:, mpiece, 3) = Inf;
+           if all(all(ssd(piece,:,:)==Inf))
+               startpiecelist(startpiecelist == piece) = [];
+           end
+       end
+   else 
+       piece = pattern(end,patterncol);
+       if piece ~= 0
+           ssd(piece, :,3) = Inf;
+           ssd(:,piece,4) = Inf;
+           ssd(mpiece, :, 4) = Inf;
+           ssd(:, mpiece, 3) = Inf;
            if all(all(ssd(piece,:,:)==Inf))
                startpiecelist(startpiecelist == piece) = [];
            end
@@ -127,16 +140,42 @@ for ii=1:size(puzzle,3)-1
       if piece ~= 0
            ssd(piece, :,4) = Inf;
            ssd(:,piece,3) = Inf;
+           ssd(mpiece, :, 3) = Inf;
+           ssd(:, mpiece, 4) = Inf;
            if all(all(ssd(piece,:,:)==Inf))
                startpiecelist(startpiecelist == piece) = [];
            end
-       end
+      end
+   else
+       piece = pattern(1, patterncol);
+      if piece ~= 0
+           ssd(piece, :,4) = Inf;
+           ssd(:,piece,3) = Inf;
+           ssd(mpiece, :, 3) = Inf;
+           ssd(:, mpiece, 4) = Inf;
+           if all(all(ssd(piece,:,:)==Inf))
+               startpiecelist(startpiecelist == piece) = [];
+           end
+      end
    end
    if patterncol -1 > 0
        piece = pattern(patternrow, patterncol-1);
        if piece ~= 0
            ssd(piece, :,1) = Inf;
            ssd(:,piece,2) = Inf;
+           ssd(mpiece, :, 2) = Inf;
+           ssd(:, mpiece, 1) = Inf;
+           if all(all(ssd(piece,:,:)==Inf))
+               startpiecelist(startpiecelist == piece) = [];
+           end
+       end
+   else
+       piece = pattern(patternrow, end);
+       if piece ~= 0
+           ssd(piece, :,1) = Inf;
+           ssd(:,piece,2) = Inf;
+           ssd(mpiece, :, 2) = Inf;
+           ssd(:, mpiece, 1) = Inf;
            if all(all(ssd(piece,:,:)==Inf))
                startpiecelist(startpiecelist == piece) = [];
            end
@@ -147,24 +186,59 @@ for ii=1:size(puzzle,3)-1
        if piece ~= 0
            ssd(piece, :,2) = Inf;
            ssd(:,piece,1) = Inf;
+           ssd(mpiece, :, 1) = Inf;
+           ssd(:, mpiece, 2) = Inf;
+           if all(all(ssd(piece,:,:)==Inf))
+               startpiecelist(startpiecelist == piece) = [];
+           end
+       end
+   else
+       piece = pattern(patternrow,1);
+       if piece ~= 0
+           ssd(piece, :,2) = Inf;
+           ssd(:,piece,1) = Inf;
+           ssd(mpiece, :, 1) = Inf;
+           ssd(:, mpiece, 2) = Inf;
            if all(all(ssd(piece,:,:)==Inf))
                startpiecelist(startpiecelist == piece) = [];
            end
        end
    end
-       
-   
- 
+    if alreadyfullrow || any(ismember(sign(pattern),ones(1, size(pattern,2)),'rows'))
+        alreadyfullrow = 1;
+        ind = pattern(:,1);
+        ind(ind == 0) = [];
+        ssd(ind,:,2) = Inf;
+        ssd(:,ind,1) = Inf;
+        ind = pattern(:,end);
+        ind(ind == 0) = [];
+        ssd(ind,:,1) = Inf;
+        ssd(:,ind,2) = Inf;
+    end
+    if alreadyfullcol || any(ismember(sign(pattern.'),ones(1,size(pattern,1)),'rows'))
+        alreadyfullcol = 1;
+        ind = pattern(1,:);
+        ind(ind == 0) = [];
+        ssd(ind,:,4) = Inf;
+        ssd(:,ind,3) = Inf;
+        ind = pattern(end,:);
+        ind(ind == 0) = [];
+        ssd(ind,:,3) = Inf;
+        ssd(:,ind,4) = Inf;
+    end
    % Put processed image SSD value to Inf
    
    % Should systematically put to Inf blocs next to each other
    
    imshow(endimage)
-   if ~(all(all(ssd(mpiece,:,:)== Inf)) && all(all(ssd(mpiece,:,:)== Inf)))
+   if ~(all(all(ssd(mpiece,:,:)== Inf)) && all(all(ssd(:,mpiece,:)== Inf)))
         startpiecelist = [startpiecelist mpiece]; %#ok<AGROW>
    end
-   
+   disp(pattern)
+   disp(startpiecelist)
    %startpiece = checkPattern(pattern, startposrow, startposcol, blk_size, ssd);
+
 end
+disp("fini")
 
 

@@ -14,3 +14,4 @@ for ii = 2:length(pieces)
         startposcol = 1+(n-1)*blk_size;
     end
 end
+disp(pattern(m,n))
