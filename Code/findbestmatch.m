@@ -1,60 +1,16 @@
-function [mpiece, loc, ssd] = findbestmatch(piece, ssd, pattern, ii, jj, patternCheck)
-
-[~, mpiece] = min(min(ssd(piece,:,:),[],3));
-[~, loc] = min(ssd(piece,mpiece,:));
-%     
-% while(notOK)
-% 
-%     if loc == 1
-%         if (pattern(ii,jj+1) ~= 0)
-%             notOK = 1;
-%         else
-%             notOK = 0;
-%         end
-%     elseif loc == 2
-%         if (pattern(ii,jj-1) ~= 0)
-%             notOK = 1;
-%         else
-%             notOK = 0;
-%         end
-%     elseif loc == 3
-%         if (pattern(ii-1,jj) ~= 0)    
-%             notOK = 1;
-%         else
-%             notOK = 0;
-%         end
-%     elseif loc == 4
-%         if (pattern(ii+1,jj) ~= 0)
-%             notOK = 1;
-%         else
-%             notOK = 0;
-%         end
-%     end
-%     
-%     if(notOK == 1)
-%         if loc == 1
-%             if (pattern(ii,jj+1) ~= 0)
-%                 ssd(piece,pattern(ii,jj+1),loc) = Inf;
-%                 ssd(pattern(ii,jj+1),piece,loc) = Inf; 
-%             end
-%         elseif loc == 2
-%             if (pattern(ii,jj-1) ~= 0)
-%                 ssd(piece,pattern(ii,jj-1),loc) = Inf;
-%                 ssd(pattern(ii,jj-1),piece,loc) = Inf; 
-%             end
-%         elseif loc == 3
-%             if (pattern(ii-1,jj) ~= 0)
-%                 ssd(piece,pattern(ii-1,jj),loc) = Inf;
-%                 ssd(pattern(ii-1,jj),piece,loc) = Inf; 
-%             end
-%         elseif loc == 4
-%             if (pattern(ii+1,jj) ~= 0)
-%                 ssd(piece,pattern(ii+1,jj),loc) = Inf;
-%                 ssd(pattern(ii+1,jj),piece,loc) = Inf; 
-%             end
-%         end
-%     
-%         [~, mpiece] = min(min(ssd(piece,:,:),[],3));
-%         [~, loc] = min(ssd(piece,mpiece,:));
-%     end
-% end
+function [bestmpiece, loc, startposrow, startposcol] = findbestmatch(pieces, ssd, pattern, blk_size)
+[mini, bestmpiece] = min(min(ssd(pieces(1),:,:),[],3));
+[~, loc] = min(ssd(pieces(1),bestmpiece,:));
+[m,n] = find(pattern == pieces(1));
+startposrow = 1+(m-1)*blk_size;
+startposcol = 1+(n-1)*blk_size;
+for ii = 2:length(pieces)
+    [ismini, mpiece] = min(min(ssd(pieces(ii),:,:),[],3));
+    if ismini < mini
+        bestmpiece = mpiece;
+        [~, loc] = min(ssd(pieces(ii),bestmpiece,:));
+        [m,n] = find(pattern == pieces(ii));
+        startposrow = 1+(m-1)*blk_size;
+        startposcol = 1+(n-1)*blk_size;
+    end
+end
