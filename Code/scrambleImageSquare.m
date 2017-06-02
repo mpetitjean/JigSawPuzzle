@@ -1,4 +1,4 @@
-function [y, x, puzzle] = scrambleImageSquare(image, Nside,showFlag)
+function [y, x, puzzle, puzzlePattern] = scrambleImageSquare(image, Nside,showFlag)
 
 % Read image
 A = im2double(imread(image));
@@ -12,6 +12,7 @@ end
 
 % Division in subimages
 puzzle = reshape(permute(reshape(A, Nside, y/Nside, []),[1 3 2]), Nside, Nside, []);
+puzzlePattern =  reshape(1:y*x/(Nside^2), y/Nside, x/Nside).';
 
 if showFlag
     figure;
@@ -23,7 +24,9 @@ if showFlag
 end
 
 % Scrambling
-puzzle = puzzle(:,:,randperm(y*x/(Nside^2)));
+scramble = randperm(y*x/(Nside^2));
+puzzle = puzzle(:,:,scramble);
+puzzlePattern = reshape(scramble, y/Nside, x/Nside).';
 
 if showFlag
     figure;

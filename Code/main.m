@@ -7,7 +7,7 @@ image = 'lenagray.tif';
 q = 5;
 blk_size = 64;
 % Cut in subimages and scramble
-[m, n, puzzle] = scrambleImageSquare(image, blk_size,1);
+[m, n, puzzle, puzzlePatternInit] = scrambleImageSquare(image, blk_size,1);
 
 % Compute Sum of Squared Distance
 ssd = computeSSD(puzzle);
@@ -234,11 +234,12 @@ for ii=1:size(puzzle,3)-1
    if ~(all(all(ssd(mpiece,:,:)== Inf)) && all(all(ssd(:,mpiece,:)== Inf)))
         startpiecelist = [startpiecelist mpiece]; %#ok<AGROW>
    end
-   disp(pattern)
-   disp(startpiecelist)
+   
    %startpiece = checkPattern(pattern, startposrow, startposcol, blk_size, ssd);
 
 end
-disp("fini")
+
+errors = computeError(puzzlePatternInit, pattern);
+disp(['Finished with ' num2str(errors) '% of errors']);
 
 
