@@ -1,7 +1,7 @@
 function [y, x, puzzle, puzzlePattern] = scrambleImageSquare(image, Nside,showFlag)
 
 % Read image
-A = im2double(imread(image));
+A = im2double(rgb2gray(imread(image)));
 [y, x] = size(A);
 
 if (mod(y,Nside) ~= 0)
