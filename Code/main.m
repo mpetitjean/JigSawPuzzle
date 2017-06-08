@@ -3,38 +3,43 @@
 clear, close all;
 
 % Parameters
-image = '20.png';
+image = 'imData/9.png';
 q = 5;
-blk_size = 28;
+blk_size = 168;
+threshold = [0.05 0.15];
+sigma = 3;
 % Cut in subimages and scramble
-[m, n, puzzle, puzzlePatternInit] = scrambleImageSquare(image, blk_size,1);
+[m, n, z, puzzle] = scrambleImageSquare(image, blk_size,0);
+puzzlegray=puzzle;
+if z ~= 1
+    puzzlegray = cellfun(@rgb2gray, puzzlegray,'un',0);
+end
+puzzleE = cellfun(@(x) edge(x,'Canny',threshold,sigma), puzzlegray,'un',0);
 
 % Compute Sum of Squared Distance
 ssd = computeSSD(puzzle);
 
 % Compute Mahalanobis Gradient Compatibility
-mgc = computeMGC(puzzle);
+%mgc = computeMGC(puzzle);
 
-ccc = mgc .* ssd.^(1/q);
+%ccc = mgc .* ssd.^(1/q);
 
-endpuzzle = zeros(size(puzzle));
 pattern = zeros(m/blk_size,n/blk_size);
 
 for ii = 1:size(puzzle,3)
     ssd(ii,ii,:) = Inf;
 end
-startpiece = randi([1 size(puzzle,3)]);
-
-endimage = zeros(m,n);
+[~, startpiece] = min(min(min(ssd,[],3),[],2));
+endimage = zeros(m,n,z);
 midposrow = round(m/blk_size/2-1)*blk_size;
 midposcol = round(n/blk_size/2-1)*blk_size;
-endimage(midposrow+1:midposrow+blk_size, midposcol+1:midposcol+blk_size) = ...
-    puzzle(:,:,startpiece);
+endimage(midposrow+1:midposrow+blk_size, midposcol+1:midposcol+blk_size,:) = ...
+    puzzle{startpiece}(:,:,:);
 
 pattern(round(m/blk_size/2),round(n/blk_size/2)) = startpiece;
 ssd(:,startpiece,:)= Inf;
 
-figure;
+p = figure;
 imshow(endimage)
 alreadyfullrow = 0;
 alreadyfullcol = 0;
@@ -42,7 +47,7 @@ alreadyfullcol = 0;
 startposrow = midposrow+1;
 startposcol = midposcol+1;
 startpiecelist = startpiece;
-for ii=1:size(puzzle,3)-1
+for ii=1:numel(puzzle)-1
    % Check if the snake is biting its tail
    pause(0.1);
    
@@ -64,8 +69,8 @@ for ii=1:size(puzzle,3)-1
                pattern = circshift(pattern,1,2);
            end
            
-           endimage(startposrow:startposrow+blk_size-1,startposcol-blk_size:startposcol-1)...
-               = puzzle(:,:,mpiece);
+           endimage(startposrow:startposrow+blk_size-1,startposcol-blk_size:startposcol-1,:)...
+               = puzzle{mpiece}(:,:,:);
            
            startposcol = startposcol-blk_size;
            ssd(mpiece,:,1)=Inf;
@@ -79,8 +84,8 @@ for ii=1:size(puzzle,3)-1
                pattern = circshift(pattern,-1,2);
            end
            
-           endimage(startposrow:startposrow+blk_size-1,startposcol+blk_size:startposcol+2*blk_size-1)...
-               = puzzle(:,:,mpiece);
+           endimage(startposrow:startposrow+blk_size-1,startposcol+blk_size:startposcol+2*blk_size-1,:)...
+               = puzzle{mpiece}(:,:,:);
            startposcol = startposcol+blk_size;
            ssd(mpiece,:,2)=Inf;
            ssd(:,mpiece,1)=Inf;
@@ -94,8 +99,8 @@ for ii=1:size(puzzle,3)-1
                pattern = circshift(pattern,1,1);
             end
            
-           endimage(startposrow-blk_size:startposrow-1,startposcol:startposcol+blk_size-1)...
-               = puzzle(:,:,mpiece);
+           endimage(startposrow-blk_size:startposrow-1,startposcol:startposcol+blk_size-1,:)...
+               = puzzle{mpiece}(:,:,:);
            startposrow = startposrow-blk_size;
            ssd(mpiece,:,3)=Inf;
            ssd(:,mpiece,4)=Inf;
@@ -108,8 +113,8 @@ for ii=1:size(puzzle,3)-1
                pattern = circshift(pattern,-1,1);
             end
            
-           endimage(startposrow+blk_size:startposrow+2*blk_size-1,startposcol:startposcol+blk_size-1)...
-               = puzzle(:,:,mpiece);
+           endimage(startposrow+blk_size:startposrow+2*blk_size-1,startposcol:startposcol+blk_size-1,:)...
+               = puzzle{mpiece}(:,:,:);
            startposrow = startposrow + blk_size;
            ssd(mpiece,:,4)=Inf;
            ssd(:,mpiece,3)=Inf;
@@ -239,6 +244,7 @@ for ii=1:size(puzzle,3)-1
    ssd(:,mpiece,:)= Inf;
    % Should systematically put to Inf blocs next to each other
    
+   figure(p);
    imshow(endimage)
    if ~(all(all(ssd(mpiece,:,:)== Inf)) && all(all(ssd(:,mpiece,:)== Inf)))
         startpiecelist = [startpiecelist mpiece]; %#ok<AGROW>
@@ -249,11 +255,12 @@ for ii=1:size(puzzle,3)-1
    
 end
 
-errors = computeError(puzzlePatternInit, pattern);
-disp(['Finished with ' num2str(errors) '% of errors']);
 pattern = pattern(:);
 if ~all(diff(sort(pattern)))
     error('more than one occurence')
 end
+%errors = computeError(puzzlePatternInit, pattern);
+%disp(['Finished with ' num2str(errors) '% of errors']);
+
 
 
