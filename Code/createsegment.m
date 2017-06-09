@@ -1,4 +1,4 @@
-function [mysegment, segname] = createsegment(pattern, bestbuddy ,mariage)
+function [mysegment, segname] = createsegment(pattern, bestbuddy)
 [m, n] = size(pattern);
 mysegment = zeros(m,n);
 segname = 0;

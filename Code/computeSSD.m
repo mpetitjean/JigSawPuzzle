@@ -11,11 +11,9 @@ ssd = zeros(Npc,Npc,4);
 % q = 1/16;
 for ii = 1:Npc
     for jj = 1:Npc
-        spmd
         ssd(ii,jj,1) = sum(sum(abs((puzzle{ii}(:,end,:) - puzzle{jj}(:,1,:))).^p))^(q/p);
         ssd(ii,jj,2) = sum(sum(abs((puzzle{ii}(:,1,:) - puzzle{jj}(:,end,:))).^p))^(q/p);
         ssd(ii,jj,3) = sum(sum(abs((puzzle{ii}(end,:,:) - puzzle{jj}(1,:,:))).^p))^(q/p);
         ssd(ii,jj,4) = sum(sum(abs((puzzle{ii}(1,:,:) - puzzle{jj}(end,:,:))).^p))^(q/p);
-        end
     end
 end

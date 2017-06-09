@@ -28,10 +28,8 @@ function accuracy = main(image,blk_size,type,p,q,r)
 switch type
     case 'ssd'
         ssd = computeSSD(puzzle,2,2);
-        spmd
         ssd = ssd./(min(repmat(min(ssd),[numel(puzzle) 1 1]),...
             repmat(min(ssd,[],2),[1 numel(puzzle) 1]))+1);
-        end
     case 'lpq'
         if ~exist('p','var')
             p = 3/10;
@@ -172,8 +170,8 @@ mariage = computemariage(savessd,numel(puzzle));
 endimage = zeros(m,n,z);
 midposrow = round(m/blk_size/2-1)*blk_size;
 midposcol = round(n/blk_size/2-1)*blk_size;
-endimage(midposrow+1:midposrow+blk_size, midposcol+1:midposcol+blk_size,:) = ...
-    puzzle{startpiece}(:,:,:);
+endimage(midposrow+1:midposrow+blk_size, midposcol+1:midposcol+blk_size,:)...
+    = puzzle{startpiece}(:,:,:);
 
 pattern(round(m/blk_size/2),round(n/blk_size/2)) = startpiece;
 ssd(:,startpiece,:)= Inf;
@@ -190,7 +188,8 @@ while 1
 %        pause(0.01);
 
        % Find best match for current piece
-       [mpiece, loc, startposrow, startposcol] = findbestmatch(startpiecelist, ssd, pattern, blk_size, bestbuddy, mariage);
+       [mpiece, loc, startposrow, startposcol] = findbestmatch(...
+           startpiecelist, ssd, pattern, blk_size, bestbuddy, mariage);
        if ~isempty(find(pattern == mpiece, 1))
            keyboard
        end
@@ -207,7 +206,8 @@ while 1
                    pattern = circshift(pattern,1,2);
                end
 
-               endimage(startposrow:startposrow+blk_size-1,startposcol-blk_size:startposcol-1,:)...
+               endimage(startposrow:startposrow+blk_size-1,...
+                   startposcol-blk_size:startposcol-1,:)...
                    = puzzle{mpiece}(:,:,:);
 
                startposcol = startposcol-blk_size;
@@ -222,8 +222,10 @@ while 1
                    pattern = circshift(pattern,-1,2);
                end
 
-               endimage(startposrow:startposrow+blk_size-1,startposcol+blk_size:startposcol+2*blk_size-1,:)...
+               endimage(startposrow:startposrow+blk_size-1,...
+                   startposcol+blk_size:startposcol+2*blk_size-1,:)...
                    = puzzle{mpiece}(:,:,:);
+
                startposcol = startposcol+blk_size;
                ssd(mpiece,:,2)=Inf;
                ssd(:,mpiece,:)=Inf;
@@ -237,8 +239,10 @@ while 1
                    pattern = circshift(pattern,1,1);
                 end
 
-               endimage(startposrow-blk_size:startposrow-1,startposcol:startposcol+blk_size-1,:)...
+               endimage(startposrow-blk_size:startposrow-1,...
+                   startposcol:startposcol+blk_size-1,:)...
                    = puzzle{mpiece}(:,:,:);
+
                startposrow = startposrow-blk_size;
                ssd(mpiece,:,3)=Inf;
                ssd(:,mpiece,:)=Inf;
@@ -251,8 +255,10 @@ while 1
                    pattern = circshift(pattern,-1,1);
                 end
 
-               endimage(startposrow+blk_size:startposrow+2*blk_size-1,startposcol:startposcol+blk_size-1,:)...
+               endimage(startposrow+blk_size:startposrow+2*blk_size-1,...
+                   startposcol:startposcol+blk_size-1,:)...
                    = puzzle{mpiece}(:,:,:);
+
                startposrow = startposrow + blk_size;
                ssd(mpiece,:,4)=Inf;
                ssd(:,mpiece,:)=Inf;
@@ -356,7 +362,8 @@ while 1
                end
            end
        end
-        if alreadyfullrow || any(ismember(sign(pattern),ones(1, size(pattern,2)),'rows'))
+        if alreadyfullrow || any(ismember(sign(pattern),...
+                ones(1, size(pattern,2)),'rows'))
             alreadyfullrow = 1;
             ind = pattern(:,1);
             ind(ind == 0) = [];
@@ -367,7 +374,8 @@ while 1
             ssd(ind,:,1) = Inf;
             ssd(:,ind,2) = Inf;
         end
-        if alreadyfullcol || any(ismember(sign(pattern).',ones(1,size(pattern,1)),'rows'))
+        if alreadyfullcol || any(ismember(sign(pattern).',...
+                ones(1,size(pattern,1)),'rows'))
             alreadyfullcol = 1;
             ind = pattern(1,:);
             ind(ind == 0) = [];
@@ -397,7 +405,7 @@ patterncol = pattern(:);
 if ~all(diff(sort(patterncol)))
     error('more than one occurence')
 end
-[mysegment, maxseg] = createsegment(pattern, bestbuddy, mariage);
+[mysegment, maxseg] = createsegment(pattern, bestbuddy);
 frame = histcounts(mysegment(:),maxseg);
 [~, biggestseg] = max(frame);
 newimage = zeros(size(endimage));
@@ -409,8 +417,10 @@ startposcol = (piecesegcol-1)*blk_size+1;
 startposrowshifted = (piecesegrowshifted-1)*blk_size+1;
 startposcolshifted = (piecesegcolshifted-1)*blk_size+1;
 for ii=1:length(startposrow)
-    newimage(startposrowshifted(ii):startposrowshifted(ii)+blk_size-1,startposcolshifted(ii):startposcolshifted(ii)+blk_size-1,:) = ...
-        endimage(startposrow(ii):startposrow(ii)+blk_size-1,startposcol(ii):startposcol(ii)+blk_size-1,:);
+    newimage(startposrowshifted(ii):startposrowshifted(ii)+blk_size-1,...
+        startposcolshifted(ii):startposcolshifted(ii)+blk_size-1,:) = ...
+        endimage(startposrow(ii):startposrow(ii)+blk_size-1,...
+        startposcol(ii):startposcol(ii)+blk_size-1,:);
 end
 % figure(p)
 % imshow(endimage);
@@ -427,7 +437,9 @@ endimage = newimage;
 bestestimation = estimation;
 bestpattern = pattern;
 pattern = zeros(size(bestpattern));
-pattern(sub2ind(size(pattern),piecesegrowshifted, piecesegcolshifted)) = bestpattern(sub2ind(size(pattern),piecesegrow,piecesegcol));
+pattern(sub2ind(size(pattern),piecesegrowshifted, piecesegcolshifted))...
+    = bestpattern(sub2ind(size(pattern),piecesegrow,piecesegcol));
+
 [ssd, startpiecelist] = removeplacedpieces(savessd,pattern);
 alreadyfullrow = 0;
 alreadyfullcol = 0;
