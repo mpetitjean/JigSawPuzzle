@@ -1,38 +1,158 @@
 % todo: project
-
-clear, close all;
-
+function accuracy = main(image,blk_size,type,p,q,r)
+% 
+% if strcmp(type,'ssd')
+%     r = 1;
+%     p = 2;
+%     q = 2;
+% elseif strcmp(type,'lpq')
+%     r = 1;
+% elseif strcmp(type,'mgc')
+%     r = 1;
+% end
 % Parameters
-image = 'imData/17.png';
-q = 10;
-blk_size = 28;
-threshold = [0.05 0.15];
-sigma = 3;
+% image = 'imData/12.png';
+% q = 10;
+% blk_size = 28;
+% threshold = [0.05 0.15];
+% sigma = 3;
 % Cut in subimages and scramble
-[m, n, z, puzzle] = scrambleImageSquare(image, blk_size,0);
-puzzlegray=puzzle;
-if z ~= 1
-    puzzlegray = cellfun(@rgb2gray, puzzlegray,'un',0);
-end
-puzzleE = cellfun(@(x) edge(x,'Canny',threshold,sigma), puzzlegray,'un',0);
+[m, n, z, puzzle, scramble] = scrambleImageSquare(image, blk_size,0);
+% puzzlegray=puzzle;
+% if z ~= 1
+%     puzzlegray = cellfun(@rgb2gray, puzzlegray,'un',0);
+% end
+% puzzleE = cellfun(@(x) edge(x,'Canny',threshold,sigma), puzzlegray,'un',0);
 
 % Compute Sum of Squared Distance
-ssd = computeSSD(puzzle);
-if any(any(any(isnan(ssd))))
-    keyboard
+switch type
+    case 'ssd'
+        ssd = computeSSD(puzzle,2,2);
+        spmd
+        ssd = ssd./(min(repmat(min(ssd),[numel(puzzle) 1 1]),...
+            repmat(min(ssd,[],2),[1 numel(puzzle) 1]))+1);
+        end
+    case 'lpq'
+        if ~exist('p','var')
+            p = 3/10;
+        end
+        if ~exist('q','var')
+            q = 1/16;
+        end
+        ssd = computeSSD(puzzle,p,q);
+        ssd = ssd./(min(repmat(min(ssd),[numel(puzzle) 1 1]),...
+            repmat(min(ssd,[],2),[1 numel(puzzle) 1]))+1);
+    case 'mgc'
+        ssd = computeMGC(puzzle, blk_size);
+        ssd = ssd./(min(repmat(min(ssd),[numel(puzzle) 1 1]),...
+            repmat(min(ssd,[],2),[1 numel(puzzle) 1]))+1);
+    case 'm+s'
+        if ~exist('r','var')
+            r = 10;
+        end
+        ssd = computeSSD(puzzle,2,2);
+        mgc = computeMGC(puzzle, blk_size);
+        ssd = mgc .* ssd.^(1/r);
+        ssd = ssd./(min(repmat(min(ssd),[numel(puzzle) 1 1]),...
+            repmat(min(ssd,[],2),[1 numel(puzzle) 1]))+1);
+    case 'm+lpq'
+        if ~exist('p','var')
+            p = 3/10;
+        end
+        if ~exist('q','var')
+            q = 1/16;
+        end
+        if ~exist('r','var')
+            r = 10;
+        end
+        ssd = computeSSD(puzzle,p,q);
+        mgc = computeMGC(puzzle, blk_size);
+        ssd = mgc .* ssd.^(1/r);
+        ssd = ssd./(min(repmat(min(ssd),[numel(puzzle) 1 1]),...
+            repmat(min(ssd,[],2),[1 numel(puzzle) 1]))+1);
+    case 'wmgc'
+        if ~exist('r','var')
+            r = 10;
+        end
+        ssd = computeSSD(puzzle,2,2);
+        mgc = computeMGC(puzzle, blk_size);
+        ssd = mgc .* ssd.^(1/r);
+        ssd = ssd./(min(repmat(min(ssd),[numel(puzzle) 1 1]),...
+            repmat(min(ssd,[],2),[1 numel(puzzle) 1]))+1);
+        mgc = mgc./(min(repmat(min(mgc),[numel(puzzle) 1 1]),...
+            repmat(min(mgc,[],2),[1 numel(puzzle) 1]))+1);
+        W = zeros(size(ssd));
+        for ii=1:4
+            bestHungarian = munkres(mgc(:,:,ii));
+            [a,phimatch] = find(bestHungarian==1);
+            [~,I] = sort(a);
+            phimatch = phimatch(I);
+            [~, nmatch] = min(mgc(:,:,ii),[],2);
+            W(phimatch==nmatch,:,ii) = mgc(phimatch==nmatch,:,ii);
+            W(phimatch~=nmatch,:,ii) = ssd(phimatch~=nmatch,:,ii);
+        end
+        ssd = W;
+    case 'wmgclpq'
+        if ~exist('p','var')
+            p = 3/10;
+        end
+        if ~exist('q','var')
+            q = 1/16;
+        end
+        if ~exist('r','var')
+            r = 10;
+        end
+        ssd = computeSSD(puzzle,p,q);
+        mgc = computeMGC(puzzle, blk_size);
+        ssd = mgc .* ssd.^(1/r);
+        ssd = ssd./(min(repmat(min(ssd),[numel(puzzle) 1 1]),...
+            repmat(min(ssd,[],2),[1 numel(puzzle) 1]))+1);
+        mgc = mgc./(min(repmat(min(mgc),[numel(puzzle) 1 1]),...
+            repmat(min(mgc,[],2),[1 numel(puzzle) 1]))+1);
+        W = zeros(size(ssd));
+        for ii=1:4
+            bestHungarian = munkres(mgc(:,:,ii));
+            [a,phimatch] = find(bestHungarian==1);
+            [~,I] = sort(a);
+            phimatch = phimatch(I);
+            [~, nmatch] = min(mgc(:,:,ii),[],2);
+            W(phimatch==nmatch,:,ii) = mgc(phimatch==nmatch,:,ii);
+            W(phimatch~=nmatch,:,ii) = ssd(phimatch~=nmatch,:,ii);
+        end
+        ssd = W;
+    otherwise
+        error('wrong method')
 end
-% Compute Mahalanobis Gradient Compatibility
-mgc = computeMGC(puzzle, blk_size);
-if any(any(any(isnan(mgc))))
-    keyboard
-end
-ccc = mgc .* ssd.^(1/q);
-if any(any(any(isnan(ccc))))
-    keyboard
-end
-% ssd = ccc;
-ssd = ccc./(min(repmat(min(ccc),[numel(puzzle) 1 1]),repmat(min(ccc,[],2),[1 numel(puzzle) 1]))+1);
-% Mcomp = Mcomp./squeeze(min(min(ccc),min(permute(ccc,[2 1 3]))));
+
+
+% ssd = 1;
+% if ~strcmp(type,'mgc')
+%     ssd = computeSSD(puzzle,p,q);
+%     if any(any(any(isnan(ssd))))
+%         keyboard
+%     end
+% end
+% % Compute Mahalanobis Gradient Compatibility
+% mgc = 1;
+% if strcmp(type,'mgc') || strcmp(type,'m+s') || strcmp(type,'wmgc')
+%     mgc = computeMGC(puzzle, blk_size);
+%     if any(any(any(isnan(mgc))))
+%         keyboard
+%     end
+% end
+% ccc = mgc .* ssd.^(1/r);
+% if any(any(any(isnan(ccc))))
+%     keyboard
+% end
+% if strcmp(type,'mgc') || strcmp(type,'m+s') || strcmp(type,'wmgc')
+%     ssd = ccc./(min(repmat(min(ccc),[numel(puzzle) 1 1]),repmat(min(ccc,[],2),[1 numel(puzzle) 1]))+1);
+% else
+%     ssd = ccc;
+% end
+% if strcmp(type,'wmgc')
+%     munkres(mgc(:,:,2));
+% end
+% % Mcomp = Mcomp./squeeze(min(min(ccc),min(permute(ccc,[2 1 3]))));
 if any(any(any(isnan(ssd))))
     keyboard
 end
@@ -59,7 +179,7 @@ pattern(round(m/blk_size/2),round(n/blk_size/2)) = startpiece;
 ssd(:,startpiece,:)= Inf;
 
 p = figure;
-imshow(endimage)
+% imshow(endimage)
 alreadyfullrow = 0;
 alreadyfullcol = 0;
 %pause;
@@ -262,8 +382,8 @@ while 1
        ssd(:,mpiece,:)= Inf;
        % Should systematically put to Inf blocs next to each other
 
-       figure(p);
-       imshow(endimage)
+%        figure(p);
+%        imshow(endimage)
        if ~(all(all(ssd(mpiece,:,:)== Inf)) && all(all(ssd(:,mpiece,:)== Inf)))
             startpiecelist = [startpiecelist mpiece]; %#ok<AGROW>
        end
@@ -301,7 +421,7 @@ if estimation <= bestestimation
     imshow(bestimage)
     break
 end
-imshow(newimage);
+% imshow(newimage);
 bestimage = endimage;
 endimage = newimage;
 bestestimation = estimation;
@@ -347,7 +467,10 @@ end
 % h = imagesc(segmentsPermutation);
 % axis image
 % axis off
-
+good(scramble)=1:length(scramble);
+current = bestpattern.';
+current = current(:);
+accuracy = sum(current==good.')/numel(pattern)*100;
 
 
 %errors = computeError(puzzlePatternInit, pattern);

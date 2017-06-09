@@ -1,4 +1,4 @@
-function [y, x, z, puzzle] = scrambleImageSquare(image, Nside,showFlag)
+function [y, x, z, puzzle, scramble] = scrambleImageSquare(image, Nside,showFlag)
 
 % Read image
 A = im2double(imread(image));
