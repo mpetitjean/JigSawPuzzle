@@ -3,9 +3,9 @@
 clear, close all;
 
 % Parameters
-image = 'imData/9.png';
-q = 5;
-blk_size = 168;
+image = 'imData/17.png';
+q = 10;
+blk_size = 28;
 threshold = [0.05 0.15];
 sigma = 3;
 % Cut in subimages and scramble
@@ -18,17 +18,36 @@ puzzleE = cellfun(@(x) edge(x,'Canny',threshold,sigma), puzzlegray,'un',0);
 
 % Compute Sum of Squared Distance
 ssd = computeSSD(puzzle);
-
+if any(any(any(isnan(ssd))))
+    keyboard
+end
 % Compute Mahalanobis Gradient Compatibility
-%mgc = computeMGC(puzzle);
-
-%ccc = mgc .* ssd.^(1/q);
+mgc = computeMGC(puzzle, blk_size);
+if any(any(any(isnan(mgc))))
+    keyboard
+end
+ccc = mgc .* ssd.^(1/q);
+if any(any(any(isnan(ccc))))
+    keyboard
+end
+% ssd = ccc;
+ssd = ccc./(min(repmat(min(ccc),[numel(puzzle) 1 1]),repmat(min(ccc,[],2),[1 numel(puzzle) 1]))+1);
+% Mcomp = Mcomp./squeeze(min(min(ccc),min(permute(ccc,[2 1 3]))));
+if any(any(any(isnan(ssd))))
+    keyboard
+end
+ssd = ssd/max(max(max(ssd)));
+ssd(ssd==0) = realmin;
 
 pattern = zeros(m/blk_size,n/blk_size);
-
-for ii = 1:size(puzzle,3)
+bestpattern = pattern;
+bestestimation = 0;
+for ii = 1:numel(puzzle)
     ssd(ii,ii,:) = Inf;
 end
+savessd = ssd;
+bestbuddy = computebestbuddy(savessd);
+mariage = computemariage(savessd,numel(puzzle));
 [~, startpiece] = min(min(min(ssd,[],3),[],2));
 endimage = zeros(m,n,z);
 midposrow = round(m/blk_size/2-1)*blk_size;
@@ -44,221 +63,293 @@ imshow(endimage)
 alreadyfullrow = 0;
 alreadyfullcol = 0;
 %pause;
-startposrow = midposrow+1;
-startposcol = midposcol+1;
 startpiecelist = startpiece;
-for ii=1:numel(puzzle)-1
-   % Check if the snake is biting its tail
-   pause(0.1);
-   
-   % Find best match for current piece
-   [mpiece, loc, startposrow, startposcol] = findbestmatch(startpiecelist, ssd, pattern, blk_size);
-   if ~isempty(find(pattern == mpiece, 1))
-       error(' ')
-   end
-   % TODO
-   % Calculer startposrow & startposcol
-   
-   switch loc
-       case 2
-           % Piece should be placed on the left
-           if startposcol == 1
-               % Shift puzzle to the right if needed
-               endimage = circshift(endimage,blk_size,2);
-               startposcol = startposcol + blk_size;
-               pattern = circshift(pattern,1,2);
-           end
-           
-           endimage(startposrow:startposrow+blk_size-1,startposcol-blk_size:startposcol-1,:)...
-               = puzzle{mpiece}(:,:,:);
-           
-           startposcol = startposcol-blk_size;
-           ssd(mpiece,:,1)=Inf;
-           ssd(:,mpiece,2)=Inf;
-       case 1
-           % Piece should be placed on the right
-           if startposcol == n-blk_size+1
-               % Shift puzzle to the left if needed
-               endimage = circshift(endimage,-blk_size,2);
-               startposcol = startposcol - blk_size;
-               pattern = circshift(pattern,-1,2);
-           end
-           
-           endimage(startposrow:startposrow+blk_size-1,startposcol+blk_size:startposcol+2*blk_size-1,:)...
-               = puzzle{mpiece}(:,:,:);
-           startposcol = startposcol+blk_size;
-           ssd(mpiece,:,2)=Inf;
-           ssd(:,mpiece,1)=Inf;
+while 1
+    while ~isempty(find(pattern==0,1))
+       % Check if the snake is biting its tail
+%        pause(0.01);
 
-       case 4
-            % Piece should be placed on the top
-            if startposrow == 1
-               % Shift puzzle to the bottom if needed
-               endimage = circshift(endimage,blk_size,1);
+       % Find best match for current piece
+       [mpiece, loc, startposrow, startposcol] = findbestmatch(startpiecelist, ssd, pattern, blk_size, bestbuddy, mariage);
+       if ~isempty(find(pattern == mpiece, 1))
+           keyboard
+       end
+       % TODO
+       % Calculer startposrow & startposcol
+
+       switch loc
+           case 2
+               % Piece should be placed on the left
+               if startposcol == 1
+                   % Shift puzzle to the right if needed
+                   endimage = circshift(endimage,blk_size,2);
+                   startposcol = startposcol + blk_size;
+                   pattern = circshift(pattern,1,2);
+               end
+
+               endimage(startposrow:startposrow+blk_size-1,startposcol-blk_size:startposcol-1,:)...
+                   = puzzle{mpiece}(:,:,:);
+
+               startposcol = startposcol-blk_size;
+               ssd(mpiece,:,1)=Inf;
+               ssd(:,mpiece,:)=Inf;
+           case 1
+               % Piece should be placed on the right
+               if startposcol == n-blk_size+1
+                   % Shift puzzle to the left if needed
+                   endimage = circshift(endimage,-blk_size,2);
+                   startposcol = startposcol - blk_size;
+                   pattern = circshift(pattern,-1,2);
+               end
+
+               endimage(startposrow:startposrow+blk_size-1,startposcol+blk_size:startposcol+2*blk_size-1,:)...
+                   = puzzle{mpiece}(:,:,:);
+               startposcol = startposcol+blk_size;
+               ssd(mpiece,:,2)=Inf;
+               ssd(:,mpiece,:)=Inf;
+
+           case 4
+                % Piece should be placed on the top
+                if startposrow == 1
+                   % Shift puzzle to the bottom if needed
+                   endimage = circshift(endimage,blk_size,1);
+                   startposrow = startposrow + blk_size;
+                   pattern = circshift(pattern,1,1);
+                end
+
+               endimage(startposrow-blk_size:startposrow-1,startposcol:startposcol+blk_size-1,:)...
+                   = puzzle{mpiece}(:,:,:);
+               startposrow = startposrow-blk_size;
+               ssd(mpiece,:,3)=Inf;
+               ssd(:,mpiece,:)=Inf;
+           case 3
+               % Piece should be placed on the bottom
+                if startposrow == m-blk_size+1
+                   % Shift puzzle to the top if needed
+                   endimage = circshift(endimage,-blk_size,1);
+                   startposrow = startposrow - blk_size;
+                   pattern = circshift(pattern,-1,1);
+                end
+
+               endimage(startposrow+blk_size:startposrow+2*blk_size-1,startposcol:startposcol+blk_size-1,:)...
+                   = puzzle{mpiece}(:,:,:);
                startposrow = startposrow + blk_size;
-               pattern = circshift(pattern,1,1);
-            end
-           
-           endimage(startposrow-blk_size:startposrow-1,startposcol:startposcol+blk_size-1,:)...
-               = puzzle{mpiece}(:,:,:);
-           startposrow = startposrow-blk_size;
-           ssd(mpiece,:,3)=Inf;
-           ssd(:,mpiece,4)=Inf;
-       case 3
-           % Piece should be placed on the bottom
-            if startposrow == m-blk_size+1
-               % Shift puzzle to the top if needed
-               endimage = circshift(endimage,-blk_size,1);
-               startposrow = startposrow - blk_size;
-               pattern = circshift(pattern,-1,1);
-            end
-           
-           endimage(startposrow+blk_size:startposrow+2*blk_size-1,startposcol:startposcol+blk_size-1,:)...
-               = puzzle{mpiece}(:,:,:);
-           startposrow = startposrow + blk_size;
-           ssd(mpiece,:,4)=Inf;
-           ssd(:,mpiece,3)=Inf;
-   end
-   
-   % Update pattern
-   
-   patternrow = (startposrow-1)/blk_size+1;
-   patterncol = (startposcol-1)/blk_size+1;
-   pattern(patternrow,patterncol) = mpiece;
-   
-   if patternrow -1 > 0
-       piece = pattern(patternrow-1, patterncol);
-       if piece ~= 0
-           ssd(piece, :,3) = Inf;
-           ssd(:,piece,4) = Inf;
-           ssd(mpiece, :, 4) = Inf;
-           ssd(:, mpiece, 3) = Inf;
-           if all(all(ssd(piece,:,:)==Inf))
-               startpiecelist(startpiecelist == piece) = [];
-           end
+               ssd(mpiece,:,4)=Inf;
+               ssd(:,mpiece,:)=Inf;
        end
-   else 
-       piece = pattern(end,patterncol);
-       if piece ~= 0
-           ssd(piece, :,3) = Inf;
-           ssd(:,piece,4) = Inf;
-           ssd(mpiece, :, 4) = Inf;
-           ssd(:, mpiece, 3) = Inf;
-           if all(all(ssd(piece,:,:)==Inf))
-               startpiecelist(startpiecelist == piece) = [];
-           end
-       end
-   end
-   if patternrow +1 <= m/blk_size
-      piece = pattern(patternrow+1, patterncol);
-      if piece ~= 0
-           ssd(piece, :,4) = Inf;
-           ssd(:,piece,3) = Inf;
-           ssd(mpiece, :, 3) = Inf;
-           ssd(:, mpiece, 4) = Inf;
-           if all(all(ssd(piece,:,:)==Inf))
-               startpiecelist(startpiecelist == piece) = [];
-           end
-      end
-   else
-       piece = pattern(1, patterncol);
-      if piece ~= 0
-           ssd(piece, :,4) = Inf;
-           ssd(:,piece,3) = Inf;
-           ssd(mpiece, :, 3) = Inf;
-           ssd(:, mpiece, 4) = Inf;
-           if all(all(ssd(piece,:,:)==Inf))
-               startpiecelist(startpiecelist == piece) = [];
-           end
-      end
-   end
-   if patterncol -1 > 0
-       piece = pattern(patternrow, patterncol-1);
-       if piece ~= 0
-           ssd(piece, :,1) = Inf;
-           ssd(:,piece,2) = Inf;
-           ssd(mpiece, :, 2) = Inf;
-           ssd(:, mpiece, 1) = Inf;
-           if all(all(ssd(piece,:,:)==Inf))
-               startpiecelist(startpiecelist == piece) = [];
-           end
-       end
-   else
-       piece = pattern(patternrow, end);
-       if piece ~= 0
-           ssd(piece, :,1) = Inf;
-           ssd(:,piece,2) = Inf;
-           ssd(mpiece, :, 2) = Inf;
-           ssd(:, mpiece, 1) = Inf;
-           if all(all(ssd(piece,:,:)==Inf))
-               startpiecelist(startpiecelist == piece) = [];
-           end
-       end
-   end
-   if patterncol +1 <= n/blk_size
-       piece = pattern(patternrow, patterncol+1);
-       if piece ~= 0
-           ssd(piece, :,2) = Inf;
-           ssd(:,piece,1) = Inf;
-           ssd(mpiece, :, 1) = Inf;
-           ssd(:, mpiece, 2) = Inf;
-           if all(all(ssd(piece,:,:)==Inf))
-               startpiecelist(startpiecelist == piece) = [];
-           end
-       end
-   else
-       piece = pattern(patternrow,1);
-       if piece ~= 0
-           ssd(piece, :,2) = Inf;
-           ssd(:,piece,1) = Inf;
-           ssd(mpiece, :, 1) = Inf;
-           ssd(:, mpiece, 2) = Inf;
-           if all(all(ssd(piece,:,:)==Inf))
-               startpiecelist(startpiecelist == piece) = [];
-           end
-       end
-   end
-    if alreadyfullrow || any(ismember(sign(pattern),ones(1, size(pattern,2)),'rows'))
-        alreadyfullrow = 1;
-        ind = pattern(:,1);
-        ind(ind == 0) = [];
-        ssd(ind,:,2) = Inf;
-        ssd(:,ind,1) = Inf;
-        ind = pattern(:,end);
-        ind(ind == 0) = [];
-        ssd(ind,:,1) = Inf;
-        ssd(:,ind,2) = Inf;
-    end
-    if alreadyfullcol || any(ismember(sign(pattern).',ones(1,size(pattern,1)),'rows'))
-        alreadyfullcol = 1;
-        ind = pattern(1,:);
-        ind(ind == 0) = [];
-        ssd(ind,:,4) = Inf;
-        ssd(:,ind,3) = Inf;
-        ind = pattern(end,:);
-        ind(ind == 0) = [];
-        ssd(ind,:,3) = Inf;
-        ssd(:,ind,4) = Inf;
-    end
-   % Put processed image SSD value to Inf
-   ssd(:,mpiece,:)= Inf;
-   % Should systematically put to Inf blocs next to each other
-   
-   figure(p);
-   imshow(endimage)
-   if ~(all(all(ssd(mpiece,:,:)== Inf)) && all(all(ssd(:,mpiece,:)== Inf)))
-        startpiecelist = [startpiecelist mpiece]; %#ok<AGROW>
-   end
-%    disp(pattern)
-%    disp(startpiecelist)
-   %startpiece = checkPattern(pattern, startposrow, startposcol, blk_size, ssd);
-   
-end
 
-pattern = pattern(:);
-if ~all(diff(sort(pattern)))
+       % Update pattern
+
+       patternrow = (startposrow-1)/blk_size+1;
+       patterncol = (startposcol-1)/blk_size+1;
+       pattern(patternrow,patterncol) = mpiece;
+
+       if patternrow -1 > 0
+           piece = pattern(patternrow-1, patterncol);
+           if piece ~= 0
+               ssd(piece, :,3) = Inf;
+               ssd(:,piece,4) = Inf;
+               ssd(mpiece, :, 4) = Inf;
+               ssd(:, mpiece, 3) = Inf;
+               if all(all(ssd(piece,:,:)==Inf))
+                   startpiecelist(startpiecelist == piece) = [];
+               end
+           end
+       else 
+           piece = pattern(end,patterncol);
+           if piece ~= 0
+               ssd(piece, :,3) = Inf;
+               ssd(:,piece,4) = Inf;
+               ssd(mpiece, :, 4) = Inf;
+               ssd(:, mpiece, 3) = Inf;
+               if all(all(ssd(piece,:,:)==Inf))
+                   startpiecelist(startpiecelist == piece) = [];
+               end
+           end
+       end
+       if patternrow +1 <= m/blk_size
+          piece = pattern(patternrow+1, patterncol);
+          if piece ~= 0
+               ssd(piece, :,4) = Inf;
+               ssd(:,piece,3) = Inf;
+               ssd(mpiece, :, 3) = Inf;
+               ssd(:, mpiece, 4) = Inf;
+               if all(all(ssd(piece,:,:)==Inf))
+                   startpiecelist(startpiecelist == piece) = [];
+               end
+          end
+       else
+           piece = pattern(1, patterncol);
+          if piece ~= 0
+               ssd(piece, :,4) = Inf;
+               ssd(:,piece,3) = Inf;
+               ssd(mpiece, :, 3) = Inf;
+               ssd(:, mpiece, 4) = Inf;
+               if all(all(ssd(piece,:,:)==Inf))
+                   startpiecelist(startpiecelist == piece) = [];
+               end
+          end
+       end
+       if patterncol -1 > 0
+           piece = pattern(patternrow, patterncol-1);
+           if piece ~= 0
+               ssd(piece, :,1) = Inf;
+               ssd(:,piece,2) = Inf;
+               ssd(mpiece, :, 2) = Inf;
+               ssd(:, mpiece, 1) = Inf;
+               if all(all(ssd(piece,:,:)==Inf))
+                   startpiecelist(startpiecelist == piece) = [];
+               end
+           end
+       else
+           piece = pattern(patternrow, end);
+           if piece ~= 0
+               ssd(piece, :,1) = Inf;
+               ssd(:,piece,2) = Inf;
+               ssd(mpiece, :, 2) = Inf;
+               ssd(:, mpiece, 1) = Inf;
+               if all(all(ssd(piece,:,:)==Inf))
+                   startpiecelist(startpiecelist == piece) = [];
+               end
+           end
+       end
+       if patterncol +1 <= n/blk_size
+           piece = pattern(patternrow, patterncol+1);
+           if piece ~= 0
+               ssd(piece, :,2) = Inf;
+               ssd(:,piece,1) = Inf;
+               ssd(mpiece, :, 1) = Inf;
+               ssd(:, mpiece, 2) = Inf;
+               if all(all(ssd(piece,:,:)==Inf))
+                   startpiecelist(startpiecelist == piece) = [];
+               end
+           end
+       else
+           piece = pattern(patternrow,1);
+           if piece ~= 0
+               ssd(piece, :,2) = Inf;
+               ssd(:,piece,1) = Inf;
+               ssd(mpiece, :, 1) = Inf;
+               ssd(:, mpiece, 2) = Inf;
+               if all(all(ssd(piece,:,:)==Inf))
+                   startpiecelist(startpiecelist == piece) = [];
+               end
+           end
+       end
+        if alreadyfullrow || any(ismember(sign(pattern),ones(1, size(pattern,2)),'rows'))
+            alreadyfullrow = 1;
+            ind = pattern(:,1);
+            ind(ind == 0) = [];
+            ssd(ind,:,2) = Inf;
+            ssd(:,ind,1) = Inf;
+            ind = pattern(:,end);
+            ind(ind == 0) = [];
+            ssd(ind,:,1) = Inf;
+            ssd(:,ind,2) = Inf;
+        end
+        if alreadyfullcol || any(ismember(sign(pattern).',ones(1,size(pattern,1)),'rows'))
+            alreadyfullcol = 1;
+            ind = pattern(1,:);
+            ind(ind == 0) = [];
+            ssd(ind,:,4) = Inf;
+            ssd(:,ind,3) = Inf;
+            ind = pattern(end,:);
+            ind(ind == 0) = [];
+            ssd(ind,:,3) = Inf;
+            ssd(:,ind,4) = Inf;
+        end
+       % Put processed image SSD value to Inf
+       ssd(:,mpiece,:)= Inf;
+       % Should systematically put to Inf blocs next to each other
+
+       figure(p);
+       imshow(endimage)
+       if ~(all(all(ssd(mpiece,:,:)== Inf)) && all(all(ssd(:,mpiece,:)== Inf)))
+            startpiecelist = [startpiecelist mpiece]; %#ok<AGROW>
+       end
+    %    disp(pattern)
+    %    disp(startpiecelist)
+       %startpiece = checkPattern(pattern, startposrow, startposcol, blk_size, ssd);
+
+    end
+
+patterncol = pattern(:);
+if ~all(diff(sort(patterncol)))
     error('more than one occurence')
 end
+[mysegment, maxseg] = createsegment(pattern, bestbuddy, mariage);
+frame = histcounts(mysegment(:),maxseg);
+[~, biggestseg] = max(frame);
+newimage = zeros(size(endimage));
+[piecesegrow,piecesegcol] = find(mysegment==biggestseg);
+piecesegrowshifted = piecesegrow - min(piecesegrow) +1;
+piecesegcolshifted = piecesegcol - min(piecesegcol) +1;
+startposrow = (piecesegrow-1)*blk_size+1;
+startposcol = (piecesegcol-1)*blk_size+1;
+startposrowshifted = (piecesegrowshifted-1)*blk_size+1;
+startposcolshifted = (piecesegcolshifted-1)*blk_size+1;
+for ii=1:length(startposrow)
+    newimage(startposrowshifted(ii):startposrowshifted(ii)+blk_size-1,startposcolshifted(ii):startposcolshifted(ii)+blk_size-1,:) = ...
+        endimage(startposrow(ii):startposrow(ii)+blk_size-1,startposcol(ii):startposcol(ii)+blk_size-1,:);
+end
+% figure(p)
+% imshow(endimage);
+% figure
+estimation = myestimate(pattern, bestbuddy);
+if estimation <= bestestimation
+    figure(p)
+    imshow(bestimage)
+    break
+end
+imshow(newimage);
+bestimage = endimage;
+endimage = newimage;
+bestestimation = estimation;
+bestpattern = pattern;
+pattern = zeros(size(bestpattern));
+pattern(sub2ind(size(pattern),piecesegrowshifted, piecesegcolshifted)) = bestpattern(sub2ind(size(pattern),piecesegrow,piecesegcol));
+[ssd, startpiecelist] = removeplacedpieces(savessd,pattern);
+alreadyfullrow = 0;
+alreadyfullcol = 0;
+if alreadyfullrow || any(ismember(sign(pattern),ones(1, size(pattern,2)),'rows'))
+    alreadyfullrow = 1;
+    ind = pattern(:,1);
+    ind(ind == 0) = [];
+    ssd(ind,:,2) = Inf;
+    ssd(:,ind,1) = Inf;
+    ind = pattern(:,end);
+    ind(ind == 0) = [];
+    ssd(ind,:,1) = Inf;
+    ssd(:,ind,2) = Inf;
+end
+if alreadyfullcol || any(ismember(sign(pattern).',ones(1,size(pattern,1)),'rows'))
+    alreadyfullcol = 1;
+    ind = pattern(1,:);
+    ind(ind == 0) = [];
+    ssd(ind,:,4) = Inf;
+    ssd(:,ind,3) = Inf;
+    ind = pattern(end,:);
+    ind(ind == 0) = [];
+    ssd(ind,:,3) = Inf;
+    ssd(:,ind,4) = Inf;
+end
+end
+% segmentsPermutation = mysegment;
+% permutation = randperm(maxseg);
+% 
+% for i = 1:maxseg
+%     segmentsPermutation(mysegment == permutation(i)) = i;
+% end
+% figure(p)
+% imshow(endimage);
+% figure;
+% % Showing and saving the segmentation map.
+% h = imagesc(segmentsPermutation);
+% axis image
+% axis off
+
+
+
 %errors = computeError(puzzlePatternInit, pattern);
 %disp(['Finished with ' num2str(errors) '% of errors']);
 
