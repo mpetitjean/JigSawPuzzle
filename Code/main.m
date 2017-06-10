@@ -176,7 +176,7 @@ endimage(midposrow+1:midposrow+blk_size, midposcol+1:midposcol+blk_size,:)...
 pattern(round(m/blk_size/2),round(n/blk_size/2)) = startpiece;
 ssd(:,startpiece,:)= Inf;
 
-p = figure;
+% p = figure;
 % imshow(endimage)
 alreadyfullrow = 0;
 alreadyfullcol = 0;
@@ -427,8 +427,8 @@ end
 % figure
 estimation = myestimate(pattern, bestbuddy);
 if estimation <= bestestimation
-    figure(p)
-    imshow(bestimage)
+%     figure(p)
+%     imshow(bestimage)
     break
 end
 % imshow(newimage);
