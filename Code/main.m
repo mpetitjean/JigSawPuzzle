@@ -28,8 +28,8 @@ function accuracy = main(image,blk_size,type,p,q,r)
 switch type
     case 'ssd'
         ssd = computeSSD(puzzle,2,2);
-        ssd = ssd./(min(repmat(min(ssd),[numel(puzzle) 1 1]),...
-            repmat(min(ssd,[],2),[1 numel(puzzle) 1]))+1);
+%        ssd = ssd./(min(repmat(min(ssd),[numel(puzzle) 1 1]),...
+%           repmat(min(ssd,[],2),[1 numel(puzzle) 1]))+1);
     case 'lpq'
         if ~exist('p','var')
             p = 3/10;
@@ -38,12 +38,12 @@ switch type
             q = 1/16;
         end
         ssd = computeSSD(puzzle,p,q);
-        ssd = ssd./(min(repmat(min(ssd),[numel(puzzle) 1 1]),...
-            repmat(min(ssd,[],2),[1 numel(puzzle) 1]))+1);
+%        ssd = ssd./(min(repmat(min(ssd),[numel(puzzle) 1 1]),...
+%           repmat(min(ssd,[],2),[1 numel(puzzle) 1]))+1);
     case 'mgc'
         ssd = computeMGC(puzzle, blk_size);
-        ssd = ssd./(min(repmat(min(ssd),[numel(puzzle) 1 1]),...
-            repmat(min(ssd,[],2),[1 numel(puzzle) 1]))+1);
+%        ssd = ssd./(min(repmat(min(ssd),[numel(puzzle) 1 1]),...
+%           repmat(min(ssd,[],2),[1 numel(puzzle) 1]))+1);
     case 'm+s'
         if ~exist('r','var')
             r = 10;
@@ -51,8 +51,8 @@ switch type
         ssd = computeSSD(puzzle,2,2);
         mgc = computeMGC(puzzle, blk_size);
         ssd = mgc .* ssd.^(1/r);
-        ssd = ssd./(min(repmat(min(ssd),[numel(puzzle) 1 1]),...
-            repmat(min(ssd,[],2),[1 numel(puzzle) 1]))+1);
+%        ssd = ssd./(min(repmat(min(ssd),[numel(puzzle) 1 1]),...
+%            repmat(min(ssd,[],2),[1 numel(puzzle) 1]))+1);
     case 'm+lpq'
         if ~exist('p','var')
             p = 3/10;
@@ -66,8 +66,8 @@ switch type
         ssd = computeSSD(puzzle,p,q);
         mgc = computeMGC(puzzle, blk_size);
         ssd = mgc .* ssd.^(1/r);
-        ssd = ssd./(min(repmat(min(ssd),[numel(puzzle) 1 1]),...
-            repmat(min(ssd,[],2),[1 numel(puzzle) 1]))+1);
+%        ssd = ssd./(min(repmat(min(ssd),[numel(puzzle) 1 1]),...
+%            repmat(min(ssd,[],2),[1 numel(puzzle) 1]))+1);
     case 'wmgc'
         if ~exist('r','var')
             r = 10;

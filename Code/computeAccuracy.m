@@ -9,9 +9,12 @@ Im = {'imData/1.png' 'imData/2.png' 'imData/3.png' 'imData/4.png' ...
 blk_size = 56;
 method = {'ssd' 'lpq' 'mgc' 'm+s' 'm+lpq'};
 accuracy = zeros(length(method),1);
-for ii = 1:length(method)
+Nexp = 10;
+parfor ii = 1:length(method)
     for jj = 1:length(Im)
-        accuracy(ii) = accuracy(ii) + main(Im {jj},blk_size,method{ii});
+        for aa = 1:Nexp
+            accuracy(ii) = accuracy(ii) + main(Im {jj},blk_size,method{ii});
+        end
     end
 end
-accuracy = accuracy / length(Im);
+accuracy = accuracy / length(Im) / Nexp;
