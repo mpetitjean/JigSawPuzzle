@@ -1,5 +1,5 @@
 % todo: project
-function accuracy = main(image,blk_size,type,p,q,r)
+function accuracy = main(image,blk_size,method,p,q,r)
 % 
 % if strcmp(type,'ssd')
 %     r = 1;
@@ -25,7 +25,7 @@ function accuracy = main(image,blk_size,type,p,q,r)
 % puzzleE = cellfun(@(x) edge(x,'Canny',threshold,sigma), puzzlegray,'un',0);
 
 % Compute Sum of Squared Distance
-switch type
+switch method
     case 'ssd'
         ssd = computeSSD(puzzle,2,2);
 %        ssd = ssd./(min(repmat(min(ssd),[numel(puzzle) 1 1]),...
