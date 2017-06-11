@@ -10,12 +10,17 @@ blk_size = 28;
 method = 'lpq';
 p = 0.05:0.05:3;
 q = p;
+qlength = length(q);
+plength = length(p);
+Imlength = length(Im);
 accuracy = zeros(length(p),length(q));
 Nexp = 10;
-for kk = 1:length(q)
-    parfor ii = 1:length(p)
-        for jj = 1:length(Im)
+parfor kk = 1:qlength
+    disp(['master' num2str(kk)])
+    for ii = 1:plength
+        for jj = 1:Imlength
             for aa = 1:Nexp
+                disp(['one' num2str(aa)])
                 accuracy(ii,kk) = accuracy(ii,kk) + main(Im{jj},blk_size,method,p(ii),q(kk));
             end
         end

@@ -41,7 +41,7 @@ switch method
 %        ssd = ssd./(min(repmat(min(ssd),[numel(puzzle) 1 1]),...
 %           repmat(min(ssd,[],2),[1 numel(puzzle) 1]))+1);
     case 'mgc'
-        ssd = computeMGC(puzzle, blk_size);
+        ssd = computeMGC2(puzzle, blk_size);
 %        ssd = ssd./(min(repmat(min(ssd),[numel(puzzle) 1 1]),...
 %           repmat(min(ssd,[],2),[1 numel(puzzle) 1]))+1);
     case 'm+s'
@@ -49,7 +49,7 @@ switch method
             r = 10;
         end
         ssd = computeSSD(puzzle,2,2);
-        mgc = computeMGC(puzzle, blk_size);
+        mgc = computeMGC2(puzzle, blk_size);
         ssd = mgc .* ssd.^(1/r);
 %        ssd = ssd./(min(repmat(min(ssd),[numel(puzzle) 1 1]),...
 %            repmat(min(ssd,[],2),[1 numel(puzzle) 1]))+1);
@@ -64,7 +64,7 @@ switch method
             r = 10;
         end
         ssd = computeSSD(puzzle,p,q);
-        mgc = computeMGC(puzzle, blk_size);
+        mgc = computeMGC2(puzzle, blk_size);
         ssd = mgc .* ssd.^(1/r);
 %        ssd = ssd./(min(repmat(min(ssd),[numel(puzzle) 1 1]),...
 %            repmat(min(ssd,[],2),[1 numel(puzzle) 1]))+1);
@@ -73,7 +73,7 @@ switch method
             r = 10;
         end
         ssd = computeSSD(puzzle,2,2);
-        mgc = computeMGC(puzzle, blk_size);
+        mgc = computeMGC2(puzzle, blk_size);
         ssd = mgc .* ssd.^(1/r);
         ssd = ssd./(min(repmat(min(ssd),[numel(puzzle) 1 1]),...
             repmat(min(ssd,[],2),[1 numel(puzzle) 1]))+1);
@@ -101,7 +101,7 @@ switch method
             r = 10;
         end
         ssd = computeSSD(puzzle,p,q);
-        mgc = computeMGC(puzzle, blk_size);
+        mgc = computeMGC2(puzzle, blk_size);
         ssd = mgc .* ssd.^(1/r);
         ssd = ssd./(min(repmat(min(ssd),[numel(puzzle) 1 1]),...
             repmat(min(ssd,[],2),[1 numel(puzzle) 1]))+1);
@@ -159,6 +159,7 @@ ssd(ssd==0) = realmin;
 
 pattern = zeros(m/blk_size,n/blk_size);
 bestpattern = pattern;
+freeloc = pattern;
 bestestimation = 0;
 for ii = 1:numel(puzzle)
     ssd(ii,ii,:) = Inf;
@@ -175,7 +176,9 @@ endimage(midposrow+1:midposrow+blk_size, midposcol+1:midposcol+blk_size,:)...
 
 pattern(round(m/blk_size/2),round(n/blk_size/2)) = startpiece;
 ssd(:,startpiece,:)= Inf;
-
+unplacedpieces = 1:numel(puzzle);
+unplacedpieces = unplacedpieces(unplacedpieces~=startpiece);
+freeloc = updatelocations(round(m/blk_size/2),round(n/blk_size/2),freeloc);
 % p = figure;
 % imshow(endimage)
 alreadyfullrow = 0;
@@ -189,10 +192,19 @@ while 1
 
        % Find best match for current piece
        [mpiece, loc, startposrow, startposcol] = findbestmatch(...
-           startpiecelist, ssd, pattern, blk_size, bestbuddy, mariage);
+           startpiecelist, ssd, pattern, blk_size, bestbuddy, mariage, ...
+           unplacedpieces, freeloc, alreadyfullrow, alreadyfullcol);
        if ~isempty(find(pattern == mpiece, 1))
            keyboard
        end
+       if isempty(mpiece)
+           keyboard
+       end
+       if ~mpiece
+           keyboard
+       end
+       unplacedpieces = unplacedpieces(unplacedpieces~=mpiece);
+
        % TODO
        % Calculer startposrow & startposcol
 
@@ -204,6 +216,8 @@ while 1
                    endimage = circshift(endimage,blk_size,2);
                    startposcol = startposcol + blk_size;
                    pattern = circshift(pattern,1,2);
+                   freeloc = circshift(freeloc,1,2);
+                   freeloc(:,1) = freeloc(:,2)==-1;                   
                end
 
                endimage(startposrow:startposrow+blk_size-1,...
@@ -220,6 +234,8 @@ while 1
                    endimage = circshift(endimage,-blk_size,2);
                    startposcol = startposcol - blk_size;
                    pattern = circshift(pattern,-1,2);
+                   freeloc = circshift(freeloc,-1,2);
+                   freeloc(:,end) = freeloc(:,end-1)==-1;
                end
 
                endimage(startposrow:startposrow+blk_size-1,...
@@ -237,6 +253,8 @@ while 1
                    endimage = circshift(endimage,blk_size,1);
                    startposrow = startposrow + blk_size;
                    pattern = circshift(pattern,1,1);
+                   freeloc = circshift(freeloc,1,1);
+                   freeloc(1,:) = freeloc(2,:)==-1;
                 end
 
                endimage(startposrow-blk_size:startposrow-1,...
@@ -253,6 +271,8 @@ while 1
                    endimage = circshift(endimage,-blk_size,1);
                    startposrow = startposrow - blk_size;
                    pattern = circshift(pattern,-1,1);
+                   freeloc = circshift(freeloc,-1,1);
+                   freeloc(end,:) = freeloc(end-1,:)==-1;
                 end
 
                endimage(startposrow+blk_size:startposrow+2*blk_size-1,...
@@ -263,13 +283,15 @@ while 1
                ssd(mpiece,:,4)=Inf;
                ssd(:,mpiece,:)=Inf;
        end
-
        % Update pattern
 
        patternrow = (startposrow-1)/blk_size+1;
        patterncol = (startposcol-1)/blk_size+1;
+       if pattern(patternrow,patterncol)~=0
+           keyboard
+       end
        pattern(patternrow,patterncol) = mpiece;
-
+       freeloc = updatelocations(patternrow,patterncol,freeloc);
        if patternrow -1 > 0
            piece = pattern(patternrow-1, patterncol);
            if piece ~= 0
@@ -362,8 +384,7 @@ while 1
                end
            end
        end
-        if alreadyfullrow || any(ismember(sign(pattern),...
-                ones(1, size(pattern,2)),'rows'))
+        if alreadyfullrow || all(any(pattern))
             alreadyfullrow = 1;
             ind = pattern(:,1);
             ind(ind == 0) = [];
@@ -374,8 +395,7 @@ while 1
             ssd(ind,:,1) = Inf;
             ssd(:,ind,2) = Inf;
         end
-        if alreadyfullcol || any(ismember(sign(pattern).',...
-                ones(1,size(pattern,1)),'rows'))
+        if alreadyfullcol || all(any(pattern,2))
             alreadyfullcol = 1;
             ind = pattern(1,:);
             ind(ind == 0) = [];
@@ -398,7 +418,6 @@ while 1
     %    disp(pattern)
     %    disp(startpiecelist)
        %startpiece = checkPattern(pattern, startposrow, startposcol, blk_size, ssd);
-
     end
 
 patterncol = pattern(:);
@@ -440,10 +459,14 @@ pattern = zeros(size(bestpattern));
 pattern(sub2ind(size(pattern),piecesegrowshifted, piecesegcolshifted))...
     = bestpattern(sub2ind(size(pattern),piecesegrow,piecesegcol));
 
+freeloc = bwdist(sign(pattern));
+freeloc(freeloc==0) = -1;
+freeloc(freeloc>1) = 0;
+unplacedpieces = setdiff(1:numel(puzzle),pattern);
 [ssd, startpiecelist] = removeplacedpieces(savessd,pattern);
 alreadyfullrow = 0;
 alreadyfullcol = 0;
-if alreadyfullrow || any(ismember(sign(pattern),ones(1, size(pattern,2)),'rows'))
+if alreadyfullrow || all(any(pattern))
     alreadyfullrow = 1;
     ind = pattern(:,1);
     ind(ind == 0) = [];
@@ -454,7 +477,7 @@ if alreadyfullrow || any(ismember(sign(pattern),ones(1, size(pattern,2)),'rows')
     ssd(ind,:,1) = Inf;
     ssd(:,ind,2) = Inf;
 end
-if alreadyfullcol || any(ismember(sign(pattern).',ones(1,size(pattern,1)),'rows'))
+if alreadyfullcol || all(any(pattern,2))
     alreadyfullcol = 1;
     ind = pattern(1,:);
     ind(ind == 0) = [];
