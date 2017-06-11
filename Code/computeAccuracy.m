@@ -7,23 +7,17 @@ Im = {'imData/1.png' 'imData/2.png' 'imData/3.png' 'imData/4.png' ...
     'imData/13.png' 'imData/14.png' 'imData/15.png' 'imData/16.png' ...
     'imData/17.png' 'imData/18.png' 'imData/19.png' 'imData/20.png' };
 blk_size = 28;
-method = 'lpq';
-p = 0.05:0.05:3;
-q = p;
-qlength = length(q);
-plength = length(p);
-Imlength = length(Im);
-accuracy = zeros(length(p),length(q));
-Nexp = 10;
-parfor kk = 1:qlength
-    disp(['master' num2str(kk)])
-    for ii = 1:plength
-        for jj = 1:Imlength
-            for aa = 1:Nexp
-                disp(['one' num2str(aa)])
-                accuracy(ii,kk) = accuracy(ii,kk) + main(Im{jj},blk_size,method,p(ii),q(kk));
-            end
+method = 'm+s';
+r = 1:20;
+rlength = length(r);
+accuracy = zeros(rlength,1);
+Nexp = 5;
+parfor ii = 1:rlength
+    for jj = 1:length(Im)
+        for aa = 1:Nexp
+            accuracy(ii) = accuracy(ii) + main(Im{jj},blk_size,method,0,0,r(ii));
         end
     end
 end
+
 accuracy = accuracy / length(Im) / Nexp;
