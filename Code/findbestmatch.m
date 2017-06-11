@@ -70,7 +70,7 @@ if mini == Inf
             [ismini,minpiece] = min(isminis);
             if ismini/count < mini
                 mini = ismini;
-                bestmpiece = unplacedpieces(minpiece);
+                bestmpiece = unplacedpieces(minpiece(1));
                 loc = posloc;
                 startposrow = 1+(xn-1)*blk_size;
                 startposcol = 1+(yn-1)*blk_size;
@@ -85,13 +85,18 @@ if mini == Inf
         if ~alreadyfullrow
             ind = pattern(:,1);
             ind(ind == 0) = [];
-            [minx, x] = min(ssd(ind,unplacedpieces,2));
+            [minx, x] = min(ssd(ind,unplacedpieces,2),[],2);
             [ismini, xn] = min(minx);
             if ismini < mini
                 mini = ismini;
-                bestmpiece = unplacedpieces(x);
+                bestmpiece = unplacedpieces(x(1));
                 loc = 2;
-                startposrow = 1+(find(pattern(:,1)==ind(xn))-1)*blk_size;
+                try
+                startposrow = 1+(find(pattern(:,1)==ind(xn(1)))-1)*blk_size;
+                catch
+                    disp('merde')
+                    keyboard
+                end
                 startposcol = 1;
                 if ~isempty(find(pattern == bestmpiece, 1))
                     keyboard
@@ -99,13 +104,13 @@ if mini == Inf
             end
             ind = pattern(:,end);
             ind(ind == 0) = [];
-            [minx, x] = min(ssd(ind,unplacedpieces,1));
+            [minx, x] = min(ssd(ind,unplacedpieces,1),[],2);
             [ismini, xn] = min(minx);
             if ismini < mini
                 mini = ismini;
-                bestmpiece = unplacedpieces(x);
+                bestmpiece = unplacedpieces(x(1));
                 loc = 1;
-                startposrow = 1+(find(pattern(:,end) == ind(xn))-1)*blk_size;
+                startposrow = 1+(find(pattern(:,end) == ind(xn(1)))-1)*blk_size;
                 startposcol = 1+(n-1)*blk_size;
                 
                 if ~isempty(find(pattern == bestmpiece, 1))
@@ -118,25 +123,30 @@ if mini == Inf
         if ~alreadyfullcol
             ind = pattern(1,:);
             ind(ind == 0) = [];
-            [minx, x] = min(ssd(ind,unplacedpieces,4));
+            [minx, x] = min(ssd(ind,unplacedpieces,4),[],2);
             [ismini, xn] = min(minx);
             if ismini < mini
                 mini = ismini;
-                bestmpiece = unplacedpieces(x);
+                bestmpiece = unplacedpieces(x(1));
                 loc = 4;
                 startposrow = 1;
-                startposcol = 1+(find(pattern(1,:) == ind(xn))-1)*blk_size;
+                try
+                startposcol = 1+(find(pattern(1,:) == ind(xn(1)))-1)*blk_size;
+                catch
+                    disp('merde2')
+                    keyboard
+                end
                 if ~isempty(find(pattern == bestmpiece, 1))
                     keyboard
                 end
             end
             ind = pattern(end,:);
             ind(ind == 0) = [];
-            [minx, x] = min(ssd(ind,unplacedpieces,3));
+            [minx, x] = min(ssd(ind,unplacedpieces,3),[],2);
             [ismini, xn] = min(minx);
             if ismini < mini
                 mini = ismini;
-                bestmpiece = unplacedpieces(x);
+                bestmpiece = unplacedpieces(x(1));
                 loc = 3;
                 startposrow = 1+(m-1)*blk_size;
                 startposcol = 1+(find(pattern(end,:) == ind(xn))-1)*blk_size;
