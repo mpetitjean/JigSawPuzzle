@@ -1,6 +1,4 @@
 function couple = computemariage(ssd,Npc)
-% Couple(i,1) = j, best i right to j
-% Couple(i,2) = j, best i bottom of j
 men = 1:Npc;
 [~, I] = sort(ssd(:,:,2),2);
 women = mat2cell(I,ones(size(men)));
@@ -82,7 +80,7 @@ while ~isempty(men)
         enemy = couple(wife,3);
         if ssd(wife,candidate,4) < ssd(wife,enemy,4)
             couple(wife,3) = candidate;
-            men = [men enemy];
+            men = [men enemy]; %#ok<*AGROW>
         else
             men = [men candidate];
         end

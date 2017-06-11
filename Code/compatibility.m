@@ -1,5 +1,4 @@
 function rate = compatibility(x, y, candidate, loc, pattern, ssd)
-% [x, y] = find(pattern==start);
 [m, n] = size(pattern);
 switch loc
     case 1
@@ -46,6 +45,3 @@ if y < n && pattern(x,y+1) ~= 0
    count = count + 1;
 end
 rate = rate / count;
-% if rate == 1
-%     keyboard
-% end

@@ -9,7 +9,6 @@ while ~all(all(mysegment))
    possibility = pattern(mysegment==0);
    ind = randperm(length(possibility));
    queue(1)=possibility(ind(1));
-%    queue(1)=possibility(1);
    while queue(1) ~= 0
        start = queue(1);
        [x, y] = find(pattern == start);
@@ -21,19 +20,24 @@ while ~all(all(mysegment))
                res = 1;
                xn = x+dx;
                yn = y+dy;
-               if (dx * dy == 0 && dx ~= dy) && (xn >= 1 && xn <= m && yn >= 1 && yn <= n)
+               if (dx * dy == 0 && dx ~= dy) && ...
+                       (xn >= 1 && xn <= m && yn >= 1 && yn <= n)
                    if mysegment(xn,yn) == 0
                        if xn > 1 && mysegment(xn-1,yn) == segname
-                           res = res & bestbuddy(pattern(xn,yn),4) == pattern(xn-1,yn);
+                           res = res & bestbuddy(pattern(xn,yn),4) == ...
+                               pattern(xn-1,yn);
                        end
                        if yn > 1 && mysegment(xn,yn-1) == segname 
-                           res = res & bestbuddy(pattern(xn,yn), 2)== pattern(xn,yn-1);
+                           res = res & bestbuddy(pattern(xn,yn), 2)== ...
+                               pattern(xn,yn-1);
                        end
                        if xn < m && mysegment(xn+1,yn) == segname
-                           res = res & bestbuddy(pattern(xn,yn),3) == pattern(xn+1,y);
+                           res = res & bestbuddy(pattern(xn,yn),3) == ...
+                               pattern(xn+1,y);
                        end
                        if yn < n && mysegment(xn,yn+1) == segname
-                           res = res & bestbuddy(pattern(xn,yn), 1)== pattern(xn,yn+1);
+                           res = res & bestbuddy(pattern(xn,yn), 1)== ...
+                               pattern(xn,yn+1);
                        end
                        if res
                            mysegment(xn,yn) = segname;

@@ -8,7 +8,8 @@ possibilities = bestbuddy(pieces,:);
 [pindex, ploc] = ind2sub(size(possibilities),ia);
 for ii = 1:length(pindex)
     [x, y] = find(pattern==pieces(pindex(ii)));
-    ismini = compatibility(x,y,possibilities(pindex(ii),ploc(ii)),ploc(ii),pattern,ssd);
+    ismini = compatibility(x,y,possibilities(pindex(ii),ploc(ii)),...
+        ploc(ii),pattern,ssd);
     if ismini < mini
         mini = ismini;
         bestmpiece = possibilities(pindex(ii),ploc(ii));
@@ -24,7 +25,8 @@ if mini == Inf
     [pindex, ploc] = ind2sub(size(possibilities),ia);
     for ii = 1:length(pindex)
         [x, y] = find(pattern==pieces(pindex(ii)));
-        ismini = compatibility(x,y,possibilities(pindex(ii),ploc(ii)),ploc(ii),pattern,ssd);
+        ismini = compatibility(x,y,possibilities(pindex(ii),ploc(ii)),...
+            ploc(ii),pattern,ssd);
         if ismini < mini
             mini = ismini;
             bestmpiece = possibilities(pindex(ii),ploc(ii));
@@ -74,13 +76,7 @@ if mini == Inf
                 loc = posloc;
                 startposrow = 1+(xn-1)*blk_size;
                 startposcol = 1+(yn-1)*blk_size;
-                if ~isempty(find(pattern == bestmpiece, 1))
-                    keyboard
-                end
             end
-        end
-        if mini == Inf
-            keyboard            
         end
         if ~alreadyfullrow
             ind = pattern(:,1);
@@ -91,16 +87,8 @@ if mini == Inf
                 mini = ismini;
                 bestmpiece = unplacedpieces(x(1));
                 loc = 2;
-                try
                 startposrow = 1+(find(pattern(:,1)==ind(xn(1)))-1)*blk_size;
-                catch
-                    disp('merde')
-                    keyboard
-                end
                 startposcol = 1;
-                if ~isempty(find(pattern == bestmpiece, 1))
-                    keyboard
-                end
             end
             ind = pattern(:,end);
             ind(ind == 0) = [];
@@ -112,10 +100,6 @@ if mini == Inf
                 loc = 1;
                 startposrow = 1+(find(pattern(:,end) == ind(xn(1)))-1)*blk_size;
                 startposcol = 1+(n-1)*blk_size;
-                
-                if ~isempty(find(pattern == bestmpiece, 1))
-                    keyboard
-                end
             end
             
         end
@@ -130,75 +114,20 @@ if mini == Inf
                 bestmpiece = unplacedpieces(x(1));
                 loc = 4;
                 startposrow = 1;
-                try
                 startposcol = 1+(find(pattern(1,:) == ind(xn(1)))-1)*blk_size;
-                catch
-                    disp('merde2')
-                    keyboard
-                end
-                if ~isempty(find(pattern == bestmpiece, 1))
-                    keyboard
-                end
             end
             ind = pattern(end,:);
             ind(ind == 0) = [];
             [minx, x] = min(ssd(ind,unplacedpieces,3),[],2);
             [ismini, xn] = min(minx);
             if ismini < mini
-                mini = ismini;
                 bestmpiece = unplacedpieces(x(1));
                 loc = 3;
                 startposrow = 1+(m-1)*blk_size;
                 startposcol = 1+(find(pattern(end,:) == ind(xn))-1)*blk_size;
-                if ~isempty(find(pattern == bestmpiece, 1))
-                    keyboard
-                end
             end
         end
-            
-            
-%             [x, y] = find(pattern==pieces(ii));
-%             for jj = 1:numel(possibilities)
-%                 for kk=1:4
-%                     ismini = compatibility(x,y,possibilities(jj),kk,pattern,ssd);
-%                     if ismini < mini
-%                         mini = ismini;
-%                         bestmpiece = possibilities(jj);
-%                         loc = kk;
-%                         [m,n] = find(pattern == pieces(ii));
-%                         startposrow = 1+(m-1)*blk_size;
-%                         startposcol = 1+(n-1)*blk_size;
-%                     end
-%                 end
-%             end
-%         end
     end
-%         [mini, bestmpiece] = min(min(ssd(pieces(1),:,:),[],3));
-%         [~, loc] = min(ssd(pieces(1),bestmpiece,:));
-%         [m,n] = find(pattern == pieces(1));
-%         startposrow = 1+(m-1)*blk_size;
-%         startposcol = 1+(n-1)*blk_size;
-%         for ii = 2:length(pieces)
-%             [ismini, mpiece] = min(min(ssd(pieces(ii),:,:),[],3));
-%             if ismini < mini
-%                 mini = ismini;
-%                 bestmpiece = mpiece;
-%                 [~, loc] = min(ssd(pieces(ii),bestmpiece,:));
-%                 [m,n] = find(pattern == pieces(ii));
-%                 startposrow = 1+(m-1)*blk_size;
-%                 startposcol = 1+(n-1)*blk_size;
-%             end
-%         end
-        % disp(pattern(m,n))
-        % disp(['min = ' num2str(mini)])
-        if mini == Inf
-            keyboard
-            error('no solution')
-        end
-end
-if pattern((startposrow-1)/blk_size+1,(startposcol-1)/blk_size+1) == 0
-    keyboard
-end
-    
+end    
     
     

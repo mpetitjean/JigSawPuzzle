@@ -12,8 +12,5 @@ for start = 1:size(ssd,1)
         if stop == start
             bestbuddy(start,loc) = bestmatch;
         end
-        if length(bestmatch)+length(stop) ~= 2
-            keyboard
-        end
    end
 end

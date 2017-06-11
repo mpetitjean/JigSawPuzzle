@@ -7,8 +7,6 @@ function ssd = computeSSD(puzzle,p,q)
 
 Npc = numel(puzzle);
 ssd = zeros(Npc,Npc,4);
-% p = 3/10;
-% q = 1/16;
 A = cat(4,puzzle{:});
 B = cat(5,puzzle{:});
 ssd(:,:,1) = sum(sum(abs(A(:,end,:,:) - B(:,1,:,:,:)).^p)).^(q/p);

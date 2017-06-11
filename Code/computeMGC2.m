@@ -4,6 +4,7 @@ function [finalmgc,mgc,P2Diff, PDiff, mu, S] = computeMGC2(puzzle,Nside)
 % 3rd dimension index 2 is RightLeft
 % 3rd dimension index 3 is TopBottom
 % 3rd dimension index 4 is BottomTop
+
 dummyDiffs = [ 0 0 0 ; 1 1 1; -1 -1 -1; 0 0 1; 0 1 0; 1 0 0 ; -1 0 0 ; 0 -1 0; 0 0 -1]; 
 Npc = numel(puzzle);
 mgc = zeros(Npc,Npc,4);
@@ -31,8 +32,7 @@ for ii= 1:Npc
     S(:,:,ii,1,4) = inv(cov((newPDiff(:,:,4,ii))));
 end
 if ~isempty(find(S==Inf,1))
-    disp('not inversible')
-    keyboard;
+    error('S not inversible')
 end
 
 P2Diff(:,:,:,:,1) = squeeze(B(:,1,:,:,:) - A(:,end,:,:))-mu(1,:,:);

@@ -8,15 +8,6 @@ Im = {'imData/1.png' 'imData/2.png' 'imData/3.png' 'imData/4.png' ...
     'imData/17.png' 'imData/18.png' 'imData/19.png' 'imData/20.png' };
 blk_size = 28;
 method = 'm+lpq';
-r = 1:20;
-rlength = length(r);
-accuracy = zeros(rlength,1);
-Nexp = 5;
-parfor ii = 1:rlength
-    for jj = 1:length(Im)
-        disp(num2str(jj))
-        accuracy(ii) = accuracy(ii) + main(Im{jj},blk_size,method,3/10,1/16 ,r(ii));
-    end
+for jj = 1:length(Im)
+        main(Im{jj},blk_size,method)
 end
-
-accuracy = accuracy / length(Im);

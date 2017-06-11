@@ -25,7 +25,6 @@ end
 % Scrambling
 scramble = randperm(numel(puzzle));
 puzzle = puzzle(scramble);
-%puzzlePattern = reshape(scramble, y/Nside, x/Nside).';
 
 if showFlag
     figure;

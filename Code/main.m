@@ -1,35 +1,29 @@
-% todo: project
 function accuracy = main(image,blk_size,method,p,q,r)
-% 
-% if strcmp(type,'ssd')
-%     r = 1;
-%     p = 2;
-%     q = 2;
-% elseif strcmp(type,'lpq')
-%     r = 1;
-% elseif strcmp(type,'mgc')
-%     r = 1;
-% end
-% Parameters
-% image = 'imData/12.png';
-% q = 10;
-% blk_size = 28;
-% threshold = [0.05 0.15];
-% sigma = 3;
-% Cut in subimages and scramble
-[m, n, z, puzzle, scramble] = scrambleImageSquare(image, blk_size,0);
-% puzzlegray=puzzle;
-% if z ~= 1
-%     puzzlegray = cellfun(@rgb2gray, puzzlegray,'un',0);
-% end
-% puzzleE = cellfun(@(x) edge(x,'Canny',threshold,sigma), puzzlegray,'un',0);
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%     Inputs: - image: path of the image to cut (string)
+%%%             - blk_size: length of the corner of each piece (double)
+%%%             - method: compatibility method (string):
+%%%                             - SSD: 
+%%%                             - (L_p)^q:
+%%%                             - MGC: 
+%%%                             - M+S:
+%%%                             - M+(L_p)^q
+%%%             - p: parameter for the (L_p)^q, default is 3/10 (double)
+%%%             - q: parameter for the (L_p)^q, default is 1/16 (double)
+%%%             - r: parameter for the combined methods, default is 16 for
+%%%             M+S ans 9 for M+(L_p)^q (double)
+%%%     
+%%%     Output: accuracy: the accuracy with regard to piece placements
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% Compute Sum of Squared Distance
+
+% Create the puzzle
+[m, n, z, puzzle, scramble] = scrambleImageSquare(image, blk_size,0);
+
+% Compute the method
 switch method
     case 'ssd'
         ssd = computeSSD(puzzle,2,2);
-%        ssd = ssd./(min(repmat(min(ssd),[numel(puzzle) 1 1]),...
-%           repmat(min(ssd,[],2),[1 numel(puzzle) 1]))+1);
     case 'lpq'
         if ~exist('p','var')
             p = 3/10;
@@ -38,21 +32,15 @@ switch method
             q = 1/16;
         end
         ssd = computeSSD(puzzle,p,q);
-%        ssd = ssd./(min(repmat(min(ssd),[numel(puzzle) 1 1]),...
-%           repmat(min(ssd,[],2),[1 numel(puzzle) 1]))+1);
     case 'mgc'
-        ssd = computeMGC2(puzzle, blk_size);
-%        ssd = ssd./(min(repmat(min(ssd),[numel(puzzle) 1 1]),...
-%           repmat(min(ssd,[],2),[1 numel(puzzle) 1]))+1);
+        ssd = computeMGC(puzzle, blk_size);
     case 'm+s'
         if ~exist('r','var')
-            r = 10;
+            r = 16;
         end
         ssd = computeSSD(puzzle,2,2);
-        mgc = computeMGC2(puzzle, blk_size);
+        mgc = computeMGC(puzzle, blk_size);
         ssd = mgc .* ssd.^(1/r);
-%        ssd = ssd./(min(repmat(min(ssd),[numel(puzzle) 1 1]),...
-%            repmat(min(ssd,[],2),[1 numel(puzzle) 1]))+1);
     case 'm+lpq'
         if ~exist('p','var')
             p = 3/10;
@@ -61,153 +49,95 @@ switch method
             q = 1/16;
         end
         if ~exist('r','var')
-            r = 10;
+            r = 9;
         end
         ssd = computeSSD(puzzle,p,q);
-        mgc = computeMGC2(puzzle, blk_size);
+        mgc = computeMGC(puzzle, blk_size);
         ssd = mgc .* ssd.^(1/r);
-%        ssd = ssd./(min(repmat(min(ssd),[numel(puzzle) 1 1]),...
-%            repmat(min(ssd,[],2),[1 numel(puzzle) 1]))+1);
-    case 'wmgc'
-        if ~exist('r','var')
-            r = 10;
-        end
-        ssd = computeSSD(puzzle,2,2);
-        mgc = computeMGC2(puzzle, blk_size);
-        ssd = mgc .* ssd.^(1/r);
-        ssd = ssd./(min(repmat(min(ssd),[numel(puzzle) 1 1]),...
-            repmat(min(ssd,[],2),[1 numel(puzzle) 1]))+1);
-        mgc = mgc./(min(repmat(min(mgc),[numel(puzzle) 1 1]),...
-            repmat(min(mgc,[],2),[1 numel(puzzle) 1]))+1);
-        W = zeros(size(ssd));
-        for ii=1:4
-            bestHungarian = munkres(mgc(:,:,ii));
-            [a,phimatch] = find(bestHungarian==1);
-            [~,I] = sort(a);
-            phimatch = phimatch(I);
-            [~, nmatch] = min(mgc(:,:,ii),[],2);
-            W(phimatch==nmatch,:,ii) = mgc(phimatch==nmatch,:,ii);
-            W(phimatch~=nmatch,:,ii) = ssd(phimatch~=nmatch,:,ii);
-        end
-        ssd = W;
-    case 'wmgclpq'
-        if ~exist('p','var')
-            p = 3/10;
-        end
-        if ~exist('q','var')
-            q = 1/16;
-        end
-        if ~exist('r','var')
-            r = 10;
-        end
-        ssd = computeSSD(puzzle,p,q);
-        mgc = computeMGC2(puzzle, blk_size);
-        ssd = mgc .* ssd.^(1/r);
-        ssd = ssd./(min(repmat(min(ssd),[numel(puzzle) 1 1]),...
-            repmat(min(ssd,[],2),[1 numel(puzzle) 1]))+1);
-        mgc = mgc./(min(repmat(min(mgc),[numel(puzzle) 1 1]),...
-            repmat(min(mgc,[],2),[1 numel(puzzle) 1]))+1);
-        W = zeros(size(ssd));
-        for ii=1:4
-            bestHungarian = munkres(mgc(:,:,ii));
-            [a,phimatch] = find(bestHungarian==1);
-            [~,I] = sort(a);
-            phimatch = phimatch(I);
-            [~, nmatch] = min(mgc(:,:,ii),[],2);
-            W(phimatch==nmatch,:,ii) = mgc(phimatch==nmatch,:,ii);
-            W(phimatch~=nmatch,:,ii) = ssd(phimatch~=nmatch,:,ii);
-        end
-        ssd = W;
     otherwise
         error('wrong method')
 end
 
-
-% ssd = 1;
-% if ~strcmp(type,'mgc')
-%     ssd = computeSSD(puzzle,p,q);
-%     if any(any(any(isnan(ssd))))
-%         keyboard
-%     end
-% end
-% % Compute Mahalanobis Gradient Compatibility
-% mgc = 1;
-% if strcmp(type,'mgc') || strcmp(type,'m+s') || strcmp(type,'wmgc')
-%     mgc = computeMGC(puzzle, blk_size);
-%     if any(any(any(isnan(mgc))))
-%         keyboard
-%     end
-% end
-% ccc = mgc .* ssd.^(1/r);
-% if any(any(any(isnan(ccc))))
-%     keyboard
-% end
-% if strcmp(type,'mgc') || strcmp(type,'m+s') || strcmp(type,'wmgc')
-%     ssd = ccc./(min(repmat(min(ccc),[numel(puzzle) 1 1]),repmat(min(ccc,[],2),[1 numel(puzzle) 1]))+1);
-% else
-%     ssd = ccc;
-% end
-% if strcmp(type,'wmgc')
-%     munkres(mgc(:,:,2));
-% end
-% % Mcomp = Mcomp./squeeze(min(min(ccc),min(permute(ccc,[2 1 3]))));
-if any(any(any(isnan(ssd))))
-    keyboard
-end
+% map from 0 to 1;
 ssd = ssd/max(max(max(ssd)));
+% avoid absorbent;
 ssd(ssd==0) = realmin;
 
+% Create the piece map
 pattern = zeros(m/blk_size,n/blk_size);
+
 bestpattern = pattern;
+
+% Create the position possibilities map
 freeloc = pattern;
+
 bestestimation = 0;
+
+% Piece cannot match itself
 for ii = 1:numel(puzzle)
     ssd(ii,ii,:) = Inf;
 end
+
+
 savessd = ssd;
+
+% Compute best buddies
 bestbuddy = computebestbuddy(savessd);
+% Compute stable mariage
 mariage = computemariage(savessd,numel(puzzle));
+
+% Select a piece
 [~, startpiece] = min(min(min(ssd,[],3),[],2));
+
+% Initialize the reconstructed image
 endimage = zeros(m,n,z);
+
+% Place the piece at the middle of the image
 midposrow = round(m/blk_size/2-1)*blk_size;
 midposcol = round(n/blk_size/2-1)*blk_size;
 endimage(midposrow+1:midposrow+blk_size, midposcol+1:midposcol+blk_size,:)...
     = puzzle{startpiece}(:,:,:);
 
+% Place the piece on the piece map
 pattern(round(m/blk_size/2),round(n/blk_size/2)) = startpiece;
+
+% Remove the piece from possibilities
 ssd(:,startpiece,:)= Inf;
+
+% List of unplaced pieces
 unplacedpieces = 1:numel(puzzle);
 unplacedpieces = unplacedpieces(unplacedpieces~=startpiece);
+
+% Update the possible locations map
 freeloc = updatelocations(round(m/blk_size/2),round(n/blk_size/2),freeloc);
-% p = figure;
-% imshow(endimage)
+
+p = figure;
+imshow(endimage)
+
+% Initialize 
 alreadyfullrow = 0;
 alreadyfullcol = 0;
-%pause;
-startpiecelist = startpiece;
-while 1
-    while ~isempty(find(pattern==0,1))
-       % Check if the snake is biting its tail
-%        pause(0.01);
 
-       % Find best match for current piece
+% List of pieces that can accept at least one neighboor
+startpiecelist = startpiece;
+
+while 1
+    
+    % Place all the pieces
+    while ~isempty(unplacedpieces)
+       pause(0.01);
+
+       % Find best match
        [mpiece, loc, startposrow, startposcol] = findbestmatch(...
            startpiecelist, ssd, pattern, blk_size, bestbuddy, mariage, ...
            unplacedpieces, freeloc, alreadyfullrow, alreadyfullcol);
-       if ~isempty(find(pattern == mpiece, 1))
-           keyboard
-       end
-       if isempty(mpiece)
-           keyboard
-       end
-       if ~mpiece
-           keyboard
-       end
+
+       % Remove the selected piece from the unplaced pieces list
        unplacedpieces = unplacedpieces(unplacedpieces~=mpiece);
 
-       % TODO
-       % Calculer startposrow & startposcol
-
+       
+       % Place the piece on the figure, compute the next starting
+       % point, move pattern and freeloc if needed
        switch loc
            case 2
                % Piece should be placed on the left
@@ -283,15 +213,17 @@ while 1
                ssd(mpiece,:,4)=Inf;
                ssd(:,mpiece,:)=Inf;
        end
-       % Update pattern
-
+       
+       % Place the piece in pattern
        patternrow = (startposrow-1)/blk_size+1;
        patterncol = (startposcol-1)/blk_size+1;
-       if pattern(patternrow,patterncol)~=0
-           keyboard
-       end
        pattern(patternrow,patterncol) = mpiece;
+       
+       % Update freeloc
        freeloc = updatelocations(patternrow,patterncol,freeloc);
+       
+       % Update piece matches
+       % Should systematically put to Inf blocs next to each other
        if patternrow -1 > 0
            piece = pattern(patternrow-1, patterncol);
            if piece ~= 0
@@ -299,6 +231,7 @@ while 1
                ssd(:,piece,4) = Inf;
                ssd(mpiece, :, 4) = Inf;
                ssd(:, mpiece, 3) = Inf;
+               % if piece is completely surrounded
                if all(all(ssd(piece,:,:)==Inf))
                    startpiecelist(startpiecelist == piece) = [];
                end
@@ -384,6 +317,8 @@ while 1
                end
            end
        end
+       
+       % Check if shifting is still authorized
         if alreadyfullrow || all(any(pattern))
             alreadyfullrow = 1;
             ind = pattern(:,1);
@@ -406,27 +341,30 @@ while 1
             ssd(ind,:,3) = Inf;
             ssd(:,ind,4) = Inf;
         end
+        
        % Put processed image SSD value to Inf
        ssd(:,mpiece,:)= Inf;
-       % Should systematically put to Inf blocs next to each other
-
-%        figure(p);
-%        imshow(endimage)
+        
+       % Show the result
+       figure(p);
+       imshow(endimage)
+       
+       % Check if new placed piece can accept neighboors
        if ~(all(all(ssd(mpiece,:,:)== Inf)) && all(all(ssd(:,mpiece,:)== Inf)))
             startpiecelist = [startpiecelist mpiece]; %#ok<AGROW>
        end
-    %    disp(pattern)
-    %    disp(startpiecelist)
-       %startpiece = checkPattern(pattern, startposrow, startposcol, blk_size, ssd);
     end
 
-patterncol = pattern(:);
-if ~all(diff(sort(patterncol)))
-    error('more than one occurence')
-end
+% Map is full
+
+% Calculate the different segments
 [mysegment, maxseg] = createsegment(pattern, bestbuddy);
+
+% Find the biggest one
 frame = histcounts(mysegment(:),maxseg);
 [~, biggestseg] = max(frame);
+
+% Take the biggest one and store it on a new image at position (1,1)
 newimage = zeros(size(endimage));
 [piecesegrow,piecesegcol] = find(mysegment==biggestseg);
 piecesegrowshifted = piecesegrow - min(piecesegrow) +1;
@@ -441,29 +379,42 @@ for ii=1:length(startposrow)
         endimage(startposrow(ii):startposrow(ii)+blk_size-1,...
         startposcol(ii):startposcol(ii)+blk_size-1,:);
 end
-% figure(p)
-% imshow(endimage);
-% figure
+
+% Compute the Image accuracy from best buddies
 estimation = myestimate(pattern, bestbuddy);
+
+% If current estimation less good than previous one, stop
 if estimation <= bestestimation
-%     figure(p)
-%     imshow(bestimage)
+    figure(p)
+    imshow(bestimage)
     break
 end
-% imshow(newimage);
+
+% Else prepare for next iteration
+imshow(newimage);
 bestimage = endimage;
 endimage = newimage;
+
 bestestimation = estimation;
+
 bestpattern = pattern;
+
+% Recreate the piece map, containing the segment
 pattern = zeros(size(bestpattern));
 pattern(sub2ind(size(pattern),piecesegrowshifted, piecesegcolshifted))...
     = bestpattern(sub2ind(size(pattern),piecesegrow,piecesegcol));
 
+% Recreate the possible positions map
 freeloc = bwdist(sign(pattern));
 freeloc(freeloc==0) = -1;
 freeloc(freeloc>1) = 0;
+
 unplacedpieces = setdiff(1:numel(puzzle),pattern);
+
+% Update the compatibility
 [ssd, startpiecelist] = removeplacedpieces(savessd,pattern);
+
+% Check if segment prevent shifting
 alreadyfullrow = 0;
 alreadyfullcol = 0;
 if alreadyfullrow || all(any(pattern))
@@ -489,27 +440,10 @@ if alreadyfullcol || all(any(pattern,2))
     ssd(:,ind,4) = Inf;
 end
 end
-% segmentsPermutation = mysegment;
-% permutation = randperm(maxseg);
-% 
-% for i = 1:maxseg
-%     segmentsPermutation(mysegment == permutation(i)) = i;
-% end
-% figure(p)
-% imshow(endimage);
-% figure;
-% % Showing and saving the segmentation map.
-% h = imagesc(segmentsPermutation);
-% axis image
-% axis off
+
+% Converged
+% Calculate the accuracy
 good(scramble)=1:length(scramble);
 current = bestpattern.';
 current = current(:);
 accuracy = sum(current==good.')/numel(pattern)*100;
-
-
-%errors = computeError(puzzlePatternInit, pattern);
-%disp(['Finished with ' num2str(errors) '% of errors']);
-
-
-
