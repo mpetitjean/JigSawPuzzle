@@ -1,0 +1,66 @@
+\subsection{Metric parameters}
+
+The parameters of the dissimilarity metrics are varied to determine which values give the best results. The methods were tested with different parameters on the set of images\footnote{available here: \url{http://people.csail.mit.edu/taegsang/Documents/jigsawCode.zip}} first used by Cho et al. \cite{cho} and then in \cite{robust} and \cite{greedy} for puzzle pieces of size 28 by 28 pixels. The number of pieces of the puzzle in then of 432. The error is expressed as the percentage of badly positioned pieces for all the 20 images of the set. 
+
+\paragraph{M+S} \mbox{}
+
+The parameter $r$ from \autoref{eq:ms} is varied from 1 to 20. The accuracy for each value is shown in \autoref{fig:ms}.
+
+\begin{figure}[H]
+\centering
+\input{fig/param_ms}
+\caption{Performance of the M+S for various values of the $r$ parameter}
+\label{fig:ms}
+\end{figure}
+
+The accuracy is maximum for $r=16$, hence this value will be retained for the final solver. This is also the value of $r$ that yielded the best results in \cite{robust}, which confirms this experimental result.
+
+\paragraph{M+pq} \mbox{}
+
+The parameter $r$ from \autoref{eq:mpq} is varied. The accuracy for each value is shown in \autoref{fig:param_pq}.
+
+
+\begin{figure}[H]
+\centering
+\input{fig/param_pq}
+\caption{Performance of the M+pq for various values of the $r$ parameter}
+\label{fig:param_pq}
+\end{figure}
+
+When the $(L_p)^q$ is combined with the MGC, the best results are obtained when $r=9$, which will be retained. This M+pq combination has not been used in the literature, so that this conclusion only relies on the present experiments.
+
+For both the M+S and the M+pq, the performance appears to be better when the contribution from the MGC is more significant than the contribution of the methods based on the pixel intensities.
+
+\subsection{Performance comparison}
+
+The metrics with optimal parameters are then used again on the same set of images. Their performance is compared for piece sizes of 84 by 84 pixels, 56 by 56 pixels and 28 by 28 pixels.
+
+\begin{figure}[H]
+    \centering
+    \input{fig/perf84.tex}
+    \caption{Performance comparison for bloc sizes of 84 pixels. The MGC is outperforming all others with an accuracy of 93.2\%.}
+    \label{fig:perf84}
+\end{figure}
+
+The results for pieces of 84 by 84 pixels are shown in \autoref{fig:perf84}. When the size of the piece has a relatively high value, the solver is very accurate. As expected, the $(L_p)^q$ metric is performing better than the SSD as it has a very similar working principle but penalizes less the natural steep edges at the boundaries of the pieces. Surprisingly, the MGC is outperforming the more advanced M+S and M+pq metrics. The additional information brought by the pixel intensities degrades the information brought by the color gradients.
+
+\begin{figure}[H]
+    \centering
+    \input{fig/perf56.tex}
+    \caption{Performance comparison for bloc sizes of 56 pixels. The M+S is outperforming all others with an accuracy of 87.2\%.}
+    \label{fig:perf56}
+\end{figure}
+
+
+It is worth noting that a mean accuracy of 90\% does not indicate in this case that each puzzle is reconstructed with 10\% of errors. Actually, most images are reconstructed very well, but a few of them are not accurately at all, dropping the mean.
+
+The tendencies observed above are not true anymore when the size of the puzzle pieces goes down. In \autoref{fig:perf56} are shown the results for 54 by 54 pixels pieces, where it appears that the M+S is the most accurate method. When the border is smaller, less information is available and the combination of the color and gradient information allows to get more accuracy. An unexpected observation is that even if the SSD alone is far from being as accurate as the $(L_p)^q$, the combination of the SSD and the MGC outperforms the combination of the $(L_p)^q$ and the MGC.
+
+\begin{figure}[H]
+    \centering
+    \input{fig/perf28.tex}
+    \caption{Performance comparison for bloc sizes of 28 pixels. The M+S is outperforming all others with an accuracy of 66.3\%.}
+    \label{fig:perf28}
+\end{figure}
+
+Lastly, the solver was tested on small pieces of 28 by 28 pixels. The side of the pieces being very small, there is little information available and the accuracy drops to 66\%. Still, the M+S metric is the one outperforming the others, and the conclusions from the 56 by 56 case hold.

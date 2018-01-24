@@ -1,0 +1,139 @@
+\subsection{Dissimilarity metrics}
+
+The reconstruction of the puzzle is based on a dissimilarity metric between all the pieces. The higher the dissimilarity between two given pieces, the lower priority is given to the fact that these pieces are placed next to each other. Several dissimilarity metrics are introduced.
+
+\autoref{fig:side} depicts the working principle of the dissimilarity computation. The intensity of the red channel for the right side of a piece of the puzzle is plotted along with the left side of two others pieces. One can see that the matching piece has nearly the same profile as the starting piece (nearly superimposed), while the third one is very different. Of course, the difference between matching and non matching pieces are not always that obvious.
+
+\begin{figure}[H]
+    \centering
+    \input{fig/side.tex}
+    \caption{Illustration of the principle of dissimilarity computation by showing the red channel intensities for three pieces.}
+    \label{fig:side}
+\end{figure}
+
+\paragraph{Sum of Squared Distances (SSD)} \mbox{} 
+
+The SSD between two pieces $x_i$ and $x_j$ is obtained by summing up the squared differences of the pixels along the pieces' juxtaposing boundaries, for each color channel (red, green and blue) \cite{robust}. For a piece $x$ of size $M \times M$, $x(m,n,c)$ denotes the value of the pixel at the coordinates $(m,n)$ in the color channel $c$. The SSD between $x_i$ and $x_j$, $x_i$ being placed at the left of $x_j$, can be expressed as 
+
+\begin{equation}
+    D_{LR,SSD}(x_i, x_j) = \sum_{c=1}^{3} \sum_{k=1}^{M} \left( x_i(k,M,c) - x_j(k,M,c)\right)^2    
+\end{equation}
+
+This can be extended to the cases where $x_i$ is placed on the right, on the top or on the bottom of $x_j$.
+
+\paragraph{$(L_p)^q$ norm} \mbox{}
+
+The SSD is actually the $L_2$ norm of the two vectors that form the boundaries of the two pieces. The $(L_p)^q$ can also be used, and it is defind as
+
+\begin{equation}\label{eq:lpq}
+    \hspace{-0.3cm}
+    D_{LR,pq}(x_i, x_j) = \left( \sum_{c=1}^{3} \sum_{k=1}^{M} \left( \left| x_i(k,M,c) - x_j(k,M,c)\right|\right)^p \right)^{\frac{p}{q}}
+\end{equation}
+
+Hence, the SSD is a particular case of $(L_p)^q$ norm with $p=q=2$. It was experimentally found in \cite{greedy} that the good results were obtained for $p=3/10$ and $q=1/16$, they will thus be used in the solver. Instinctively, it is due to the fact that the $L_2$ norm penalizes a lot large boundary differences even though such differences may occur in natural images. 
+
+\paragraph{Mahalanobis Gradient Compatibility (MGC)}
+
+While the first two metrics penalize differences in the pixels intensities, the MGC (introduced in \cite{Gallagher}) instead penalizes differences in the intensity of the gradient. If a piece has a strong gradient near its edge, it is expected that the juxtaposed piece will continue the gradient. The penalty for a deviation is computed with the Mahalanobis distance.
+
+Looking at the dissimilarity between the right side of $x_i$ and the left side of $x_j$, let $\mu_{iL}(c)$ be the average color difference in the color channel $c$ between the two last columns of $x_i$:
+
+\begin{equation}
+    \mu_{iL}(c) = \frac{1}{M} \sum_{k=1}^{M} x_i(k,M,c) - x_i(k,M-1,c) 
+\end{equation}
+
+The array of gradients of dimension $M$ by 3 $G_{ijLR}$ is then introduced, with $G_{ijLR}(k,c)$ denoting the color difference between the right side of $x_i$ and the left side of $x_j$ for the color channel $c$ at the row $k$:
+
+\begin{equation}
+    G_{ijLR}(k,c) = x_j(k,1,c) - x_i(k,M,c) 
+\end{equation}
+
+By denoting $S_{iL}$ the 3 by 3 covariance matrix obtained from the gradient difference at the right of $x_i$, the gradient dissimilarity is given by:
+
+\begin{gather}
+    D'_{LR}(x_i,x_j) = \sum_{k=1}^{M} D'_{LR,k}\\
+    D'_{LR,k} = \left( G_{ijLR}(k) - \mu_{iL} \right) S_{iL}^{-1} \left( G_{ijLR}(k) - \mu_{iL} \right)^T
+\end{gather}
+
+The final MGC symmetric dissimilarity metric for placing the piece $x_i$ at the left of $x_j$ is given by:
+
+\begin{equation}
+    D_{LR,MGC}(x_i,x_j) = D'_{LR}(x_i,x_j) +  D'_{RL}(x_j,x_i)
+\end{equation}
+
+\paragraph{Combining MGC and SSD (M+S)} \mbox{}
+
+It was proposed in \cite{robust} that the SSD and the MGC convey complementary information so that they could be combined to provide more accuracy. The M+S dissimilarity metric is hence defined as the weighed product of the SSD and the MGC:
+
+\begin{equation}\label{eq:ms}
+    D_{M+S}(x_i,x_j) = D_{MGC}(x_i,x_j) \times \left( D_{SSD}(x_i,x_j) \right)^{\frac{1}{r}}
+\end{equation}
+
+The value of the weighing parameter $r$ giving the best results is investigated later.
+
+%The obtained dissimilarities are then normalized \cite{robust} \cite{Gallagher}. For a given piece, all its dissimilarities are divided by the 
+
+\paragraph{Combining MGC and $(L_p)^q$ (M+pq)} \mbox{}
+
+In the same idea, the MGC and the $(L_p)^q$ can be combined in a weighed product. This method will be referred to as the M+pq in the latter.
+
+\begin{equation}\label{eq:mpq}
+    D_{M+pq}(x_i,x_j) = D_{MGC}(x_i,x_j) \times \left( D_{pq}(x_i,x_j) \right)^{\frac{1}{r}}
+\end{equation}
+
+\subsection{Placement algorithm}
+
+Once the dissimilarity is evaluated between every piece of the puzzle, for every orientation (top, bottom, right, left), the pieces should be placed accordingly to these measures. The implemented algorithm is a two step iterative method, and it is inspired from what was proposed in \cite{greedy}. An illustration of its functioning is depicted in \autoref{fig:placement}.
+
+The starting piece is chosen to be the one having the lowest dissimilarity with any other piece of the puzzle. During the first step, all the pieces that have already been placed are scanned. The next piece that will be placed on the puzzle  is the one that has the lowest dissimilarity with any of the already placed ones. Piece by piece, the puzzle is then reconstructed. When a piece has to be placed in between multiple others, the dissimilarity with all of these is taken into account.
+
+
+The second step starts when the puzzle is full. The algorithm then looks for \textit{symmetric matches} in all the juxtaposed pieces. Two pieces $x_i$ and $x_j$ are symmetrically matched if the best possible match for $x_i$ in every possible orientation is $x_j$ and the best possible match for $x_j$ is $x_i$ in the opposite orientation. For example, if the pieces labeled $x_3$ and $x_7$ are juxtaposed at the end of the first step, they will be considered as symmetric matches if the best possible match for $x_3$ is $x_7$ on its right, and the best match for $x_7$ is $x_3$ on its left. From these symmetric matches, a \textit{segment} is extracted from the image. It is defined as the biggest portion of the puzzle only composed of symmetrically matched pieces, and will serve as starting point for the next iteration. The iteration process stops when the result after the reconstruction step is not changing anymore.
+
+\begin{figure}[H]
+    \centering
+%     \subfloat[The puzzle is constructed piece by piece.]{\includegraphics[height=0.25\textheight]{fig/algo_start.eps}
+% \label{fig:placement1}}
+% \hfil
+%     \subfloat[The puzzle is constructed piece by piece.]{\includegraphics[height=0.25\textheight]{fig/algo_start.eps}
+% \label{fig:placement1}}
+% \hfil
+%     \subfloat[The puzzle is constructed piece by piece.]{\includegraphics[height=0.25\textheight]{fig/algo_start.eps}
+% \label{fig:placement1}}
+% \hfil
+%     \subfloat[The puzzle is constructed piece by piece.]{\includegraphics[height=0.25\textheight]{fig/algo_start.eps}
+% \label{fig:placement1}}
+% \hfil
+    \begin{subfigure}{0.25\textheight}
+        \centering
+        \includegraphics[width=\textwidth]{fig/algo_start.eps}
+        \caption{The puzzle is constructed piece by piece.}    
+        \label{fig:placement1}
+    \end{subfigure}%
+    
+    \begin{subfigure}[b]{0.25\textheight}
+        \centering
+        \includegraphics[width=\textwidth]{fig/algo_fin1.eps}
+        \caption{At the end of the first placement phase, errors are present.}    
+        \label{fig:placement2}
+    \end{subfigure}%
+    
+    \begin{subfigure}[b]{0.25\textheight}
+        \centering
+        \includegraphics[width=\textwidth]{fig/algo_cut.eps}
+        \caption{The biggest segment is extracted from the previous image and will serve as start for the next iteration.}    
+        \label{fig:placement3}
+    \end{subfigure}%
+    
+    \begin{subfigure}[b]{0.25\textheight}
+        \centering
+        \includegraphics[width=\textwidth]{fig/algo_fin2.eps}
+        \caption{The reconstruction is nearly perfect after two iterations.}    
+        \label{fig:placement4}
+    \end{subfigure}
+    
+    \caption{Illustration of the reconstruction algorithm}
+    \label{fig:placement}
+\end{figure}
+
+The Matlab implementation of the algorithm was optimized using matrix computations, and the full solving of a 432 parts puzzle takes less than 10 seconds.

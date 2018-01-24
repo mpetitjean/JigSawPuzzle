@@ -1,0 +1,18 @@
+\begin{tikzpicture}
+
+\begin{axis}[%
+ybar,
+ymin = 0,
+ymax = 100,
+width=.75\linewidth,
+ylabel=Accuracy (\%),
+height=0.25\textheight,
+xticklabels={SSD,Lpq,MGC,M+S,M+pq},
+xtick=data,
+at={(1.733in,1.051in)},
+scale only axis,
+]
+\addplot table [col sep=comma]{data/dat56.csv};
+\end{axis}
+\end{tikzpicture}%
+%\end{document}

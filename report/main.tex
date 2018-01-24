@@ -1,0 +1,124 @@
+\documentclass[conference,english, 12pt,a4paper]{IEEEtran}
+\usepackage{blindtext, graphicx}
+%
+\usepackage{mathtools}
+\usepackage[hidelinks]{hyperref}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc} % optional
+\usepackage[cmintegrals]{newtxmath}
+\usepackage{bm} % optional
+\usepackage{babel}
+\usepackage{float}
+\usepackage{siunitx}
+\usepackage{multirow}
+%\usepackage{subcaption}
+%  \usepackage{geometry}
+%\usepackage{tikz}
+%\usepackage{pgfplots}
+\usepackage[backend=biber,style=numeric,sorting=none]{biblatex}
+\usepackage{csquotes}
+\usepackage{tikz}
+\usepackage{pgfplots}
+\pgfplotsset{compat=newest}
+\usepgfplotslibrary{units}
+\usepackage{standalone}
+\usepackage{tikzscale}
+\makeatletter
+\pgfplotsset{
+  unit code/.code 2 args=
+    \begingroup
+    \protected@edef\x{\endgroup\si{#2}}\x
+}
+\makeatletter
+\let\MYcaption\@makecaption
+\makeatother
+
+\usepackage[font=footnotesize]{subcaption}
+
+\makeatletter
+\let\@makecaption\MYcaption
+\makeatother
+% \ifCLASSOPTIONcompsoc
+% \usepackage[caption=false,font=normalsize,labelfont=sf,textfont=sf]{subfig}
+% \else
+% \usepackage[caption=false,font=footnotesize]{subfig}
+% \fi
+\usepackage[final]{microtype}
+\addbibresource{sources.bib}
+% \geometry{
+% 	a4paper,
+% 	left=25mm,
+% 	right=25mm,
+% 	top=25mm,
+% 	bottom=25mm,
+% }
+% \interdisplaylinepenalty=2500
+\begin{document}
+%
+% paper title
+% can use linebreaks \\ within to get better formatting as desired
+\title{Solving Jigsaw Puzzles Using Image Processing}
+
+
+% author names and affiliations
+% use a multiple column layout for up to three different
+% affiliations
+\author{\IEEEauthorblockN{Victor Artois}
+\IEEEauthorblockA{\href{mailto:vartois@ulb.ac.be}{vartois@ulb.ac.be}}
+\and
+\IEEEauthorblockN{Cédric Hannotier}
+\IEEEauthorblockA{\href{mailto:channoti@ulb.ac.be}{channoti@ulb.ac.be}}
+\and
+\IEEEauthorblockN{Mathieu Petitjean}
+\IEEEauthorblockA{\href{mailto:mpetitje@ulb.ac.be}{mpetitje@ulb.ac.be}}}
+
+% make the title area
+\maketitle
+\thispagestyle{plain}
+\pagestyle{plain}
+
+
+\begin{abstract}
+    An automatic jigsaw puzzle reconstructs an image starting from scrambled, non-overlapping puzzle parts. Here, an algorithm is developed to solve puzzles composed of coloured, square pieces with known orientation. Several dissimilarity metrics from the literature are introduced, exploiting the color intensities or the gradient intensities at the boundaries of the pieces. Based on these, an iterative algorithm is used to reconstruct the puzzle. First, the pieces are placed based on the search for the lowest dissimilarity, then symmetric matches are extracted as a start for the next iteration. The parameters of the metrics are tuned on a image set, and the performances of the metrics for various piece sizes are compared. For larger pieces (84 by 84 pixels), the gradient information allows for the best accuracy (93\%). For 56 by 56 pieces and smaller, the combination of pixel intensities and gradient variation is the best performing metric.
+\end{abstract}
+
+\begin{IEEEkeywords}
+jigsaw puzzle, pixel intensity, color gradient 
+\end{IEEEkeywords}
+
+\IEEEpeerreviewmaketitle
+
+
+\section{Introduction}
+\input{sections/intro}
+
+\section{Algorithm}
+\input{sections/algo}
+
+\section{Results}
+\input{sections/results}
+
+
+\section{Conclusion}
+\input{sections/conclusion}
+
+
+\appendix
+
+The work separation was done as follows: \begin{itemize}
+    \item Mathieu Petitjean did the research of the existing techniques for computing the dissimilarity between pieces and implemented them in Matlab.
+    
+    \item Cédric Hannotier implemented the iterative placement algorithm on the basis of theses dissimilarity measures. He also optimized the Matlab code to reach fast execution time.
+    
+    \item Victor Artois ran the expirements to determine the optimal values of the parameters and compared the performance of the prosposed metrics for various puzzle sizes.
+\end{itemize}
+
+\ifCLASSOPTIONcaptionsoff
+  \newpage
+\fi
+
+\printbibliography
+
+\end{document}
+
+

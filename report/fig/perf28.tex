@@ -1,0 +1,20 @@
+\begin{tikzpicture}
+
+\begin{axis}[%
+ybar,
+ymin = 0,
+ymax = 100,
+width=.75\linewidth,
+height=0.25\textheight,
+xticklabels={SSD,Lpq,MGC,M+S,M+pq,\cite{greedy},\cite{Gallagher},\cite{robust}},
+ylabel=Accuracy (\%),
+xtick={1,...,8},
+at={(1.733in,1.051in)},
+scale only axis,
+]
+\addplot table [col sep=comma]{data/dat28.csv};
+%\addplot+[ybar] plot coordinates
+	%{(6,94) (7,95.3) (8,95.6)};
+\end{axis}
+\end{tikzpicture}%
+%\end{document}

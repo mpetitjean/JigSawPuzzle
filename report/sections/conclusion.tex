@@ -1,0 +1,11 @@
+Based on the quite active research on the subject of automatic puzzle solving, several dissimilarity metrics have been introduced. The SSD and the $(L_p)^q$) are based on the color intensities at the boundaries of the pieces and the MGC is based on the gradient of these intensities. The two types of dissimilarity estimations can be combined into the M+S and the M+pq.
+
+A placement algorithm has been developed, whose objective was to reconstruct the puzzle based on the dissimilarity between all the pieces of the puzzles in all the possible configurations. To lower the number of errors due to the placement, a segment of symmetric matches is extracted at the end of the placement and will serve as a start for the next iteration.
+
+A set of images widely used in the literature has been used first to tune the parameters of the metrics, and next to quantify the performance of the puzzle solver. An accuracy of 93\% was reached on puzzles composed of pieces of 84 by 84 pixels using the MGC method. For lower sizes, the M+S method is the best one, and the accuracy to 87\% for 56 by 56 and to 66\% for 28 by 28.
+
+The code is implemented in Matlab, and C/MEX functions are available to fasten the execution.
+
+Performance could be improved at both phases of the reassembly. Firstly, the dissimilarity metrics could be improved to use more information than the content of the border only. Prediction-based or probabilistic metrics also exist. Secondly, the placement algorithms used in the literature are a bit more involved.
+
+The jigsaw puzzle problem stays an open problem as no one has yet came up with a solver able to reconstruct any puzzle with 100\% accuracy.
